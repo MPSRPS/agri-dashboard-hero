@@ -43,9 +43,7 @@ const translations = {
     profit: 'Profit',
     thisMonth: 'This Month',
     lastMonth: 'Last Month',
-    thisYear: 'This Year',
-    fertilizerRecommendation: 'Fertilizer Recommendation',
-    farmer: 'Farmer'
+    thisYear: 'This Year'
   },
   hindi: {
     dashboard: 'डैशबोर्ड',
@@ -88,9 +86,7 @@ const translations = {
     profit: 'लाभ',
     thisMonth: 'इस महीने',
     lastMonth: 'पिछले महीने',
-    thisYear: 'इस साल',
-    fertilizerRecommendation: 'उर्वरक अनुशंसा',
-    farmer: 'किसान'
+    thisYear: 'इस साल'
   },
   marathi: {
     dashboard: 'डॅशबोर्ड',
@@ -133,9 +129,7 @@ const translations = {
     profit: 'नफा',
     thisMonth: 'या महिन्यात',
     lastMonth: 'मागील महिन्यात',
-    thisYear: 'या वर्षी',
-    fertilizerRecommendation: 'खत शिफारस',
-    farmer: 'शेतकरी'
+    thisYear: 'या वर्षी'
   },
   punjabi: {
     dashboard: 'ਡੈਸ਼ਬੋਰਡ',
@@ -178,9 +172,7 @@ const translations = {
     profit: 'ਲਾਭ',
     thisMonth: 'ਇਸ ਮਹੀਨੇ',
     lastMonth: 'ਪਿਛਲੇ ਮਹੀਨੇ',
-    thisYear: 'ਇਸ ਸਾਲ',
-    fertilizerRecommendation: 'ਖਾਦ ਸਿਫਾਰਸ਼',
-    farmer: 'ਕਿਸਾਨ'
+    thisYear: 'ਇਸ ਸਾਲ'
   },
   bengali: {
     dashboard: 'ড্যাশবোর্ড',
@@ -223,9 +215,7 @@ const translations = {
     profit: 'লাভ',
     thisMonth: 'এই মাসে',
     lastMonth: 'গত মাসে',
-    thisYear: 'এই বছর',
-    fertilizerRecommendation: 'সার সুপারিশ',
-    farmer: 'কৃষক'
+    thisYear: 'এই বছর'
   },
   tamil: {
     dashboard: 'டாஷ்போர்டு',
@@ -268,9 +258,7 @@ const translations = {
     profit: 'லாபம்',
     thisMonth: 'இந்த மாதம்',
     lastMonth: 'கடந்த மாதம்',
-    thisYear: 'இந்த ஆண்டு',
-    fertilizerRecommendation: 'உர பரிந்துரை',
-    farmer: 'விவசாயி'
+    thisYear: 'இந்த ஆண்டு'
   },
 };
 
