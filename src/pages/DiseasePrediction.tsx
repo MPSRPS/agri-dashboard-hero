@@ -1,4 +1,3 @@
-
 import { useState, useRef } from 'react';
 import DashboardLayout from '@/components/DashboardLayout';
 import { useTranslation } from '@/hooks/useTranslation';
@@ -312,7 +311,7 @@ const DiseasePrediction = () => {
                               <Droplets className="h-4 w-4 text-blue-500" />
                               <span className="text-sm text-gray-700">Humidity</span>
                             </div>
-                            <span className="text-sm font-medium">High (>75%)</span>
+                            <span className="text-sm font-medium">High (&gt;75%)</span>
                           </div>
                           
                           <div className="flex items-center justify-between">
