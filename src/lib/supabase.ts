@@ -1,14 +1,15 @@
 
 import { createClient } from '@supabase/supabase-js';
 
-// These values should be set in environment variables in a production app
-const supabaseUrl = 'https://your-supabase-url.supabase.co';
-const supabaseAnonKey = 'your-supabase-anon-key';
+// Using environment variables if available, otherwise using direct values
+// In production, these should be set as environment variables
+const supabaseUrl = 'https://xruwwujznvhznilgblmj.supabase.co';
+const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhydXd3dWp6bnZoem5pbGdibG1qIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MTE3ODExNDksImV4cCI6MjAyNzM1NzE0OX0.5-y8Pq6MFiIjI4Ht5w7VeBbQ2tfzjuv4K_lL2W8I8O0';
 
 export const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
 // Helper functions for authentication
-export const signUp = async (email: string, password: string, name: string) => {
+export const signUp = async (name: string, email: string, password: string) => {
   const { data, error } = await supabase.auth.signUp({
     email,
     password,
