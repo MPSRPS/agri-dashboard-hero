@@ -1,285 +1,395 @@
 
-import { useState } from "react";
-import { useLanguage } from "@/context/LanguageContext";
-import { Card } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Sprout, BarChart, Leaf, Droplets, CloudRain, ThermometerSun } from "lucide-react";
-import { toast } from "sonner";
-import Chatbot from "@/components/Chatbot";
+import { useState } from 'react';
+import DashboardLayout from '@/components/DashboardLayout';
+import { useTranslation } from '@/hooks/useTranslation';
+import { Card } from '@/components/ui/card';
+import { Leaf, ArrowRight, FileText, Droplets, ThermometerSnowflake, Ruler, CloudRain } from 'lucide-react';
 
 const CropRecommendation = () => {
-  const { t } = useLanguage();
+  const { t } = useTranslation();
   const [formData, setFormData] = useState({
-    nitrogen: "",
-    phosphorus: "",
-    potassium: "",
-    temperature: "",
-    humidity: "",
-    ph: "",
-    rainfall: "",
+    nitrogen: '',
+    phosphorus: '',
+    potassium: '',
+    temperature: '',
+    humidity: '',
+    ph: '',
+    rainfall: ''
   });
+  const [loading, setLoading] = useState(false);
   const [recommendation, setRecommendation] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
-  const [tab, setTab] = useState("manual");
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
-    setFormData({
-      ...formData,
-      [name]: value,
-    });
+    setFormData(prev => ({ ...prev, [name]: value }));
   };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    setIsLoading(true);
+    setLoading(true);
     
     // Simulate API call
     setTimeout(() => {
-      // Mock recommendation based on input
-      const recommendations = [
-        "Rice: Based on your soil composition and climate data, rice would be an ideal crop. It thrives in the high humidity and rainfall conditions you've described.",
-        "Wheat: The soil nutrient levels and moderate rainfall in your area make wheat a good choice. It performs well in these conditions.",
-        "Maize: With the current nitrogen and phosphorus levels, maize would be an excellent choice. It's suitable for your temperature and humidity range.",
-        "Sugarcane: The pH level and potassium content of your soil are perfect for sugarcane cultivation. The rainfall is also adequate.",
-        "Cotton: Your soil composition and climate conditions are ideal for cotton. It requires the kind of temperature and humidity you've described."
-      ];
-      
-      const randomIndex = Math.floor(Math.random() * recommendations.length);
-      setRecommendation(recommendations[randomIndex]);
-      setIsLoading(false);
-      toast.success("Crop recommendation generated!");
+      // This would normally be the result from your backend ML model
+      const crops = ['rice', 'wheat', 'maize', 'chickpea', 'kidney beans', 'mung bean', 'black gram', 'pomegranate', 'banana', 'mango', 'grapes', 'watermelon', 'muskmelon', 'papaya', 'orange', 'coconut'];
+      const randomCrop = crops[Math.floor(Math.random() * crops.length)];
+      setRecommendation(randomCrop);
+      setLoading(false);
     }, 2000);
   };
 
-  const crops = [
-    { name: "Rice", suitability: 92, icon: <Sprout size={18} /> },
-    { name: "Wheat", suitability: 87, icon: <Sprout size={18} /> },
-    { name: "Maize", suitability: 76, icon: <Sprout size={18} /> },
-    { name: "Sugarcane", suitability: 65, icon: <Sprout size={18} /> },
-    { name: "Cotton", suitability: 58, icon: <Sprout size={18} /> },
+  const resetForm = () => {
+    setFormData({
+      nitrogen: '',
+      phosphorus: '',
+      potassium: '',
+      temperature: '',
+      humidity: '',
+      ph: '',
+      rainfall: ''
+    });
+    setRecommendation(null);
+  };
+
+  // Presets for demo purposes
+  const presets = [
+    {
+      name: 'Sandy Soil',
+      icon: <Leaf className="h-5 w-5" />,
+      values: {
+        nitrogen: '40',
+        phosphorus: '35',
+        potassium: '30',
+        temperature: '25',
+        humidity: '60',
+        ph: '6.5',
+        rainfall: '150'
+      }
+    },
+    {
+      name: 'Clay Soil',
+      icon: <Droplets className="h-5 w-5" />,
+      values: {
+        nitrogen: '80',
+        phosphorus: '60',
+        potassium: '50',
+        temperature: '28',
+        humidity: '70',
+        ph: '7.2',
+        rainfall: '200'
+      }
+    },
+    {
+      name: 'Loamy Soil',
+      icon: <FileText className="h-5 w-5" />,
+      values: {
+        nitrogen: '60',
+        phosphorus: '50',
+        potassium: '45',
+        temperature: '27',
+        humidity: '65',
+        ph: '6.8',
+        rainfall: '175'
+      }
+    }
   ];
 
-  return (
-    <div className="space-y-6">
-      <header className="mb-8">
-        <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
-          <Leaf className="text-krishi-500" />
-          {t("crop_recommendation")}
-        </h1>
-        <p className="text-gray-500 mt-1">Get AI-powered crop suggestions based on your farm's conditions</p>
-      </header>
+  const cropInformation: Record<string, any> = {
+    rice: {
+      description: 'Rice is a staple food crop in many parts of the world. It thrives in warm and humid conditions with plenty of water.',
+      season: 'Kharif season (Monsoon)',
+      waterNeeds: 'High',
+      growthPeriod: '3-6 months',
+      yield: '3-5 tons per hectare'
+    },
+    wheat: {
+      description: 'Wheat is a cereal grain that is a worldwide staple food. It grows best in moderate temperatures.',
+      season: 'Rabi season (Winter)',
+      waterNeeds: 'Medium',
+      growthPeriod: '4-5 months',
+      yield: '2.5-3.5 tons per hectare'
+    },
+    maize: {
+      description: 'Maize (corn) is a versatile crop used for food, feed, and biofuel. It requires warm conditions and moderate rainfall.',
+      season: 'Kharif and Rabi seasons',
+      waterNeeds: 'Medium',
+      growthPeriod: '3-4 months',
+      yield: '4-6 tons per hectare'
+    },
+    mango: {
+      description: 'Mango is a tropical fruit known as the "King of Fruits". It grows best in tropical and subtropical regions.',
+      season: 'Perennial, fruiting in summer',
+      waterNeeds: 'Medium',
+      growthPeriod: 'Trees take 5-8 years to fruit',
+      yield: '10-15 tons per hectare (mature trees)'
+    }
+  };
 
-      <Tabs value={tab} onValueChange={setTab} className="w-full">
-        <TabsList className="grid w-full max-w-md grid-cols-2 mb-6">
-          <TabsTrigger value="manual">Manual Input</TabsTrigger>
-          <TabsTrigger value="sensor">Sensor Data</TabsTrigger>
-        </TabsList>
+  return (
+    <DashboardLayout>
+      <div className="space-y-6">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-800 dark:text-gray-100">{t('cropRecommendation')}</h1>
+          <p className="text-gray-500 dark:text-gray-400">
+            Get personalized crop recommendations based on soil composition and environmental factors.
+          </p>
+        </div>
         
-        <TabsContent value="manual" className="space-y-4">
-          <Card className="p-6 shadow-sm border border-gray-200">
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="nitrogen">Nitrogen (N) in kg/ha</Label>
-                  <div className="relative">
-                    <ThermometerSun className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
-                    <Input
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* Left Column - Form */}
+          <div className="lg:col-span-2">
+            <Card className="p-6 border-gray-200">
+              <h2 className="text-xl font-semibold mb-4">Enter Soil and Environmental Data</h2>
+              
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                {presets.map((preset, index) => (
+                  <button
+                    key={index}
+                    onClick={() => setFormData(preset.values)}
+                    className="p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors flex flex-col items-center justify-center gap-2"
+                  >
+                    <div className="w-10 h-10 rounded-full bg-krishi-100 flex items-center justify-center text-krishi-600">
+                      {preset.icon}
+                    </div>
+                    <span className="text-sm font-medium">{preset.name}</span>
+                    <span className="text-xs text-gray-500">Quick preset</span>
+                  </button>
+                ))}
+              </div>
+              
+              <form onSubmit={handleSubmit} className="space-y-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <label htmlFor="nitrogen" className="text-sm font-medium text-gray-700 flex items-center gap-1">
+                      <Leaf className="h-4 w-4 text-krishi-600" />
+                      Nitrogen (N) - kg/ha
+                    </label>
+                    <input
+                      type="number"
                       id="nitrogen"
                       name="nitrogen"
-                      type="number"
-                      placeholder="e.g., 80"
-                      className="pl-10"
                       value={formData.nitrogen}
-                      onChange={handleInputChange}
+                      onChange={handleChange}
+                      className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-krishi-500"
+                      placeholder="e.g., 50"
                       required
                     />
                   </div>
-                </div>
-                
-                <div className="space-y-2">
-                  <Label htmlFor="phosphorus">Phosphorus (P) in kg/ha</Label>
-                  <div className="relative">
-                    <ThermometerSun className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
-                    <Input
+                  
+                  <div className="space-y-2">
+                    <label htmlFor="phosphorus" className="text-sm font-medium text-gray-700 flex items-center gap-1">
+                      <Leaf className="h-4 w-4 text-krishi-600" />
+                      Phosphorus (P) - kg/ha
+                    </label>
+                    <input
+                      type="number"
                       id="phosphorus"
                       name="phosphorus"
-                      type="number"
-                      placeholder="e.g., 40"
-                      className="pl-10"
                       value={formData.phosphorus}
-                      onChange={handleInputChange}
+                      onChange={handleChange}
+                      className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-krishi-500"
+                      placeholder="e.g., 40"
                       required
                     />
                   </div>
-                </div>
-                
-                <div className="space-y-2">
-                  <Label htmlFor="potassium">Potassium (K) in kg/ha</Label>
-                  <div className="relative">
-                    <ThermometerSun className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
-                    <Input
+                  
+                  <div className="space-y-2">
+                    <label htmlFor="potassium" className="text-sm font-medium text-gray-700 flex items-center gap-1">
+                      <Leaf className="h-4 w-4 text-krishi-600" />
+                      Potassium (K) - kg/ha
+                    </label>
+                    <input
+                      type="number"
                       id="potassium"
                       name="potassium"
-                      type="number"
-                      placeholder="e.g., 60"
-                      className="pl-10"
                       value={formData.potassium}
-                      onChange={handleInputChange}
+                      onChange={handleChange}
+                      className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-krishi-500"
+                      placeholder="e.g., 45"
                       required
                     />
                   </div>
-                </div>
-                
-                <div className="space-y-2">
-                  <Label htmlFor="temperature">Temperature (°C)</Label>
-                  <div className="relative">
-                    <ThermometerSun className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
-                    <Input
+                  
+                  <div className="space-y-2">
+                    <label htmlFor="temperature" className="text-sm font-medium text-gray-700 flex items-center gap-1">
+                      <ThermometerSnowflake className="h-4 w-4 text-orange-500" />
+                      Temperature (°C)
+                    </label>
+                    <input
+                      type="number"
                       id="temperature"
                       name="temperature"
-                      type="number"
-                      step="0.1"
-                      placeholder="e.g., 25.5"
-                      className="pl-10"
                       value={formData.temperature}
-                      onChange={handleInputChange}
+                      onChange={handleChange}
+                      className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-krishi-500"
+                      placeholder="e.g., 25"
                       required
                     />
                   </div>
-                </div>
-                
-                <div className="space-y-2">
-                  <Label htmlFor="humidity">Humidity (%)</Label>
-                  <div className="relative">
-                    <Droplets className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
-                    <Input
+                  
+                  <div className="space-y-2">
+                    <label htmlFor="humidity" className="text-sm font-medium text-gray-700 flex items-center gap-1">
+                      <Droplets className="h-4 w-4 text-blue-500" />
+                      Humidity (%)
+                    </label>
+                    <input
+                      type="number"
                       id="humidity"
                       name="humidity"
-                      type="number"
-                      placeholder="e.g., 65"
-                      className="pl-10"
                       value={formData.humidity}
-                      onChange={handleInputChange}
+                      onChange={handleChange}
+                      className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-krishi-500"
+                      placeholder="e.g., 65"
                       required
                     />
                   </div>
-                </div>
-                
-                <div className="space-y-2">
-                  <Label htmlFor="ph">pH level</Label>
-                  <div className="relative">
-                    <BarChart className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
-                    <Input
+                  
+                  <div className="space-y-2">
+                    <label htmlFor="ph" className="text-sm font-medium text-gray-700 flex items-center gap-1">
+                      <Ruler className="h-4 w-4 text-purple-500" />
+                      pH Value
+                    </label>
+                    <input
+                      type="number"
                       id="ph"
                       name="ph"
-                      type="number"
-                      step="0.1"
-                      placeholder="e.g., 6.5"
-                      className="pl-10"
                       value={formData.ph}
-                      onChange={handleInputChange}
+                      onChange={handleChange}
+                      className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-krishi-500"
+                      placeholder="e.g., 6.5"
+                      step="0.1"
+                      min="0"
+                      max="14"
+                      required
+                    />
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <label htmlFor="rainfall" className="text-sm font-medium text-gray-700 flex items-center gap-1">
+                      <CloudRain className="h-4 w-4 text-blue-500" />
+                      Rainfall (mm)
+                    </label>
+                    <input
+                      type="number"
+                      id="rainfall"
+                      name="rainfall"
+                      value={formData.rainfall}
+                      onChange={handleChange}
+                      className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-krishi-500"
+                      placeholder="e.g., 200"
                       required
                     />
                   </div>
                 </div>
                 
-                <div className="space-y-2">
-                  <Label htmlFor="rainfall">Rainfall (mm)</Label>
-                  <div className="relative">
-                    <CloudRain className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
-                    <Input
-                      id="rainfall"
-                      name="rainfall"
-                      type="number"
-                      placeholder="e.g., 200"
-                      className="pl-10"
-                      value={formData.rainfall}
-                      onChange={handleInputChange}
-                      required
-                    />
-                  </div>
-                </div>
-              </div>
-              
-              <Button 
-                type="submit" 
-                className="w-full md:w-auto bg-krishi-500 hover:bg-krishi-600 mt-4"
-                disabled={isLoading}
-              >
-                {isLoading ? "Analyzing..." : "Get Recommendation"}
-              </Button>
-            </form>
-          </Card>
-          
-          {recommendation && (
-            <Card className="p-6 shadow-sm border border-green-100 bg-green-50">
-              <h2 className="text-lg font-semibold text-gray-900 mb-2 flex items-center gap-2">
-                <Sprout className="text-krishi-500" />
-                Recommended Crop
-              </h2>
-              <p className="text-gray-700">{recommendation}</p>
-              
-              <div className="mt-6">
-                <h3 className="font-medium text-gray-800 mb-3">Other suitable crops:</h3>
-                <div className="space-y-3">
-                  {crops.map((crop, index) => (
-                    <div key={index} className="flex items-center gap-3">
-                      <div className="w-8 h-8 rounded-full bg-krishi-100 flex items-center justify-center text-krishi-700">
-                        {crop.icon}
+                <div className="flex gap-4">
+                  <button
+                    type="submit"
+                    disabled={loading}
+                    className="px-6 py-2 bg-krishi-600 text-white rounded-md hover:bg-krishi-700 transition-colors focus:outline-none focus:ring-2 focus:ring-krishi-500 focus:ring-offset-2 disabled:opacity-70 disabled:cursor-not-allowed"
+                  >
+                    {loading ? (
+                      <div className="flex items-center gap-2">
+                        <div className="h-4 w-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                        <span>Analyzing...</span>
                       </div>
-                      <div className="flex-1">
-                        <div className="flex items-center justify-between">
-                          <span className="font-medium">{crop.name}</span>
-                          <span className="text-sm text-gray-500">{crop.suitability}% suitable</span>
+                    ) : (
+                      <div className="flex items-center gap-2">
+                        <span>Get Recommendation</span>
+                        <ArrowRight className="h-4 w-4" />
+                      </div>
+                    )}
+                  </button>
+                  
+                  <button
+                    type="button"
+                    onClick={resetForm}
+                    className="px-6 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50 transition-colors focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2"
+                  >
+                    Reset
+                  </button>
+                </div>
+              </form>
+            </Card>
+          </div>
+          
+          {/* Right Column - Recommendation Results */}
+          <div className="lg:col-span-1">
+            <Card className="p-6 border-gray-200 h-full">
+              <h2 className="text-xl font-semibold mb-4">Recommendation Results</h2>
+              
+              {recommendation ? (
+                <div className="space-y-6">
+                  <div className="bg-krishi-50 p-4 rounded-lg border border-krishi-100">
+                    <h3 className="text-lg font-medium text-krishi-800 capitalize mb-2">
+                      Recommended Crop: {recommendation}
+                    </h3>
+                    {cropInformation[recommendation] ? (
+                      <p className="text-gray-600">
+                        {cropInformation[recommendation].description}
+                      </p>
+                    ) : (
+                      <p className="text-gray-600">
+                        This crop is well-suited for your soil composition and environmental conditions.
+                      </p>
+                    )}
+                  </div>
+                  
+                  {cropInformation[recommendation] && (
+                    <div className="space-y-4">
+                      <h3 className="text-md font-medium text-gray-800">Crop Information</h3>
+                      
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="bg-gray-50 p-3 rounded-lg border border-gray-200">
+                          <span className="text-xs text-gray-500 block">Season</span>
+                          <span className="font-medium text-gray-800">{cropInformation[recommendation].season}</span>
                         </div>
-                        <div className="w-full bg-gray-200 rounded-full h-1.5 mt-1">
-                          <div 
-                            className="bg-krishi-500 h-1.5 rounded-full" 
-                            style={{ width: `${crop.suitability}%` }}
-                          ></div>
+                        
+                        <div className="bg-gray-50 p-3 rounded-lg border border-gray-200">
+                          <span className="text-xs text-gray-500 block">Water Needs</span>
+                          <span className="font-medium text-gray-800">{cropInformation[recommendation].waterNeeds}</span>
                         </div>
+                        
+                        <div className="bg-gray-50 p-3 rounded-lg border border-gray-200">
+                          <span className="text-xs text-gray-500 block">Growth Period</span>
+                          <span className="font-medium text-gray-800">{cropInformation[recommendation].growthPeriod}</span>
+                        </div>
+                        
+                        <div className="bg-gray-50 p-3 rounded-lg border border-gray-200">
+                          <span className="text-xs text-gray-500 block">Expected Yield</span>
+                          <span className="font-medium text-gray-800">{cropInformation[recommendation].yield}</span>
+                        </div>
+                      </div>
+                      
+                      <div className="bg-blue-50 p-4 rounded-lg border border-blue-100">
+                        <h4 className="text-sm font-medium text-blue-800 mb-2">Tips for Cultivation</h4>
+                        <ul className="text-sm text-gray-600 space-y-1 list-disc pl-4">
+                          <li>Ensure proper field preparation before sowing</li>
+                          <li>Monitor soil moisture regularly</li>
+                          <li>Apply fertilizers according to recommended dosage</li>
+                          <li>Implement integrated pest management practices</li>
+                          <li>Harvest at optimal maturity for best quality</li>
+                        </ul>
                       </div>
                     </div>
-                  ))}
+                  )}
                 </div>
-              </div>
+              ) : (
+                <div className="h-full flex flex-col items-center justify-center text-center p-4">
+                  <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mb-4">
+                    <Leaf className="h-8 w-8 text-gray-400" />
+                  </div>
+                  <h3 className="text-lg font-medium text-gray-700">No Recommendation Yet</h3>
+                  <p className="text-gray-500 mt-2">
+                    Enter your soil and environmental data on the left to get a personalized crop recommendation.
+                  </p>
+                </div>
+              )}
             </Card>
-          )}
-        </TabsContent>
-        
-        <TabsContent value="sensor" className="space-y-4">
-          <Card className="p-6 shadow-sm border border-gray-200">
-            <div className="text-center py-8">
-              <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-krishi-100 text-krishi-500 mb-4">
-                <Droplets size={32} />
-              </div>
-              <h3 className="text-lg font-medium text-gray-900 mb-2">Connect your sensor device</h3>
-              <p className="text-gray-500 mb-6 max-w-md mx-auto">
-                Link your IoT sensors to automatically collect soil and environmental data for more accurate recommendations.
-              </p>
-              <div className="flex justify-center gap-4">
-                <Button variant="outline">
-                  Connect Device
-                </Button>
-                <Button 
-                  onClick={() => setTab("manual")}
-                  className="bg-krishi-500 hover:bg-krishi-600"
-                >
-                  Manual Input
-                </Button>
-              </div>
-            </div>
-          </Card>
-        </TabsContent>
-      </Tabs>
-
-      <Chatbot />
-    </div>
+          </div>
+        </div>
+      </div>
+    </DashboardLayout>
   );
 };
 

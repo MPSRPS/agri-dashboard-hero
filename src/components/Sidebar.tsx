@@ -1,154 +1,96 @@
 
-import { useState, useEffect } from "react";
-import { useNavigate, useLocation } from "react-router-dom";
-import { 
-  LayoutDashboard, 
-  Sprout, 
-  FileSearch, 
-  Calculator, 
-  LogOut,
-  ChevronLeft,
-  ChevronRight,
-  Home
-} from "lucide-react";
-import { useLanguage } from "@/context/LanguageContext";
-import { useAuth } from "@/context/AuthContext";
-import { Button } from "@/components/ui/button";
-import { cn } from "@/lib/utils";
+import { Home, Leaf, AlertTriangle, Calculator, LogOut } from 'lucide-react';
+import { useNavigate, useLocation } from 'react-router-dom';
+import { cn } from '@/lib/utils';
+import { useAuth } from '@/context/AuthContext';
+import { useTranslation } from '@/hooks/useTranslation';
 
-interface SidebarLinkProps {
-  icon: React.ReactNode;
-  label: string;
-  to: string;
-  isCollapsed: boolean;
+interface SidebarProps {
+  isOpen: boolean;
+  onClose: () => void;
 }
 
-const SidebarLink = ({ icon, label, to, isCollapsed }: SidebarLinkProps) => {
-  const navigate = useNavigate();
-  const location = useLocation();
-  const isActive = location.pathname === to;
-
-  return (
-    <Button
-      variant="ghost"
-      className={cn(
-        "w-full flex items-center justify-start gap-3 px-4 py-2 h-10 text-base font-medium transition-all duration-200",
-        isCollapsed ? "justify-center px-2" : "justify-start",
-        isActive ? "bg-krishi-100 text-krishi-800" : "text-gray-600 hover:bg-krishi-50 hover:text-krishi-700"
-      )}
-      onClick={() => navigate(to)}
-    >
-      <span className="flex-shrink-0">{icon}</span>
-      {!isCollapsed && <span className="truncate">{label}</span>}
-    </Button>
-  );
-};
-
-const Sidebar = () => {
-  const { t } = useLanguage();
+const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
   const { logout } = useAuth();
-  const [isCollapsed, setIsCollapsed] = useState(false);
-  const location = useLocation();
   const navigate = useNavigate();
+  const location = useLocation();
+  const { t } = useTranslation();
 
-  // Set collapsed state based on screen size
-  useEffect(() => {
-    const handleResize = () => {
-      if (window.innerWidth < 768) {
-        setIsCollapsed(true);
-      }
-    };
+  const sidebarLinks = [
+    {
+      title: t('dashboard'),
+      icon: Home,
+      path: '/dashboard',
+    },
+    {
+      title: t('cropRecommendation'),
+      icon: Leaf,
+      path: '/crop-recommendation',
+    },
+    {
+      title: t('diseasePrediction'),
+      icon: AlertTriangle,
+      path: '/disease-prediction',
+    },
+    {
+      title: t('budgetPlanning'),
+      icon: Calculator,
+      path: '/budget-planning',
+    },
+  ];
 
-    window.addEventListener("resize", handleResize);
-    handleResize();
+  const handleNavigation = (path: string) => {
+    navigate(path);
+    if (window.innerWidth < 768) {
+      onClose();
+    }
+  };
 
-    return () => window.removeEventListener("resize", handleResize);
-  }, []);
-
-  // Toggle sidebar collapse
-  const toggleSidebar = () => {
-    setIsCollapsed(!isCollapsed);
+  const handleLogout = () => {
+    logout();
+    navigate('/');
   };
 
   return (
-    <div 
+    <div
       className={cn(
-        "h-screen bg-white border-r border-gray-200 transition-all duration-300 flex flex-col",
-        isCollapsed ? "w-16" : "w-64"
+        'h-full bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 w-64 transition-all duration-300 ease-in-out',
+        isOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0 md:w-16'
       )}
     >
-      <div className="flex items-center gap-3 p-4 border-b border-gray-200">
-        <div className="flex-shrink-0 w-8 h-8 rounded-md bg-krishi-500 flex items-center justify-center">
-          <Sprout className="text-white" size={18} />
+      <div className="h-full flex flex-col justify-between py-4">
+        <div className="px-4 space-y-1">
+          {sidebarLinks.map((link) => (
+            <button
+              key={link.path}
+              onClick={() => handleNavigation(link.path)}
+              className={cn(
+                'w-full flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-md transition-colors',
+                location.pathname === link.path
+                  ? 'bg-krishi-100 text-krishi-800 dark:bg-krishi-900 dark:text-krishi-300'
+                  : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
+              )}
+            >
+              <link.icon className="h-5 w-5" />
+              <span className={cn('transition-opacity duration-300', isOpen ? 'opacity-100' : 'opacity-0 md:hidden')}>
+                {link.title}
+              </span>
+            </button>
+          ))}
         </div>
-        {!isCollapsed && (
-          <h1 className="text-xl font-semibold text-gray-900">KrishiShakti</h1>
-        )}
+
+        <div className="px-4">
+          <button
+            onClick={handleLogout}
+            className="w-full flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-md text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
+          >
+            <LogOut className="h-5 w-5" />
+            <span className={cn('transition-opacity duration-300', isOpen ? 'opacity-100' : 'opacity-0 md:hidden')}>
+              {t('logout')}
+            </span>
+          </button>
+        </div>
       </div>
-
-      <nav className="flex-1 p-2 space-y-1 overflow-y-auto">
-        <SidebarLink
-          icon={<Home size={20} />}
-          label={t("home")}
-          to="/"
-          isCollapsed={isCollapsed}
-        />
-        <SidebarLink
-          icon={<LayoutDashboard size={20} />}
-          label={t("dashboard")}
-          to="/dashboard"
-          isCollapsed={isCollapsed}
-        />
-        <SidebarLink
-          icon={<Sprout size={20} />}
-          label={t("crop_recommendation")}
-          to="/crop-recommendation"
-          isCollapsed={isCollapsed}
-        />
-        <SidebarLink
-          icon={<FileSearch size={20} />}
-          label={t("disease_prediction")}
-          to="/disease-prediction"
-          isCollapsed={isCollapsed}
-        />
-        <SidebarLink
-          icon={<Calculator size={20} />}
-          label={t("budget_planning")}
-          to="/budget-planning"
-          isCollapsed={isCollapsed}
-        />
-      </nav>
-
-      <div className="p-2 border-t border-gray-200">
-        <Button
-          variant="ghost"
-          className={cn(
-            "w-full flex items-center gap-3 px-4 py-2 h-10 text-base font-medium transition-colors",
-            isCollapsed ? "justify-center px-2" : "justify-start",
-            "text-gray-600 hover:bg-red-50 hover:text-red-700"
-          )}
-          onClick={() => {
-            logout();
-            navigate("/");
-          }}
-        >
-          <LogOut size={20} />
-          {!isCollapsed && <span>{t("logout")}</span>}
-        </Button>
-      </div>
-
-      <Button
-        variant="ghost"
-        size="icon"
-        onClick={toggleSidebar}
-        className="absolute top-1/2 -right-3 transform -translate-y-1/2 bg-white border border-gray-200 rounded-full p-1 shadow-sm hover:bg-gray-100 z-10 h-6 w-6"
-      >
-        {isCollapsed ? (
-          <ChevronRight size={14} />
-        ) : (
-          <ChevronLeft size={14} />
-        )}
-      </Button>
     </div>
   );
 };
