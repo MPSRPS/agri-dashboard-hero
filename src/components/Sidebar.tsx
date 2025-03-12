@@ -10,30 +10,33 @@ interface SidebarProps {
   onClose: () => void;
 }
 
-// Define the navigation items
+// Define the type for translation keys to ensure type safety
+type TranslationKey = Parameters<ReturnType<typeof useTranslation>['t']>[0];
+
+// Define the navigation items with properly typed titles
 export const sidebarLinks = [
   {
-    title: 'dashboard',
+    title: 'dashboard' as TranslationKey,
     href: '/dashboard',
     icon: LayoutDashboard
   },
   {
-    title: 'cropRecommendation',
+    title: 'cropRecommendation' as TranslationKey,
     href: '/crop-recommendation',
     icon: Home
   },
   {
-    title: 'diseasePrediction',
+    title: 'diseasePrediction' as TranslationKey,
     href: '/disease-prediction',
     icon: ListChecks
   },
   {
-    title: 'budgetPlanning',
+    title: 'budgetPlanning' as TranslationKey,
     href: '/budget-planning',
     icon: Coins
   },
   {
-    title: 'fertilizerRecommendation',
+    title: 'fertilizerRecommendation' as TranslationKey,
     href: '/fertilizer-recommendation',
     icon: Sprout
   },
