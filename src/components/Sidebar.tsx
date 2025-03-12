@@ -1,7 +1,8 @@
+
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { cn } from '@/lib/utils';
-import { Home, LayoutDashboard, ListChecks, Coins, Seedling as SeedlingIcon, X } from 'lucide-react';
+import { Home, LayoutDashboard, ListChecks, Coins, Sprout, X } from 'lucide-react';
 import { useTranslation } from '@/hooks/useTranslation';
 
 interface SidebarProps {
@@ -12,29 +13,29 @@ interface SidebarProps {
 // Define the navigation items
 export const sidebarLinks = [
   {
-    title: 'Dashboard',
+    title: 'dashboard',
     href: '/dashboard',
     icon: LayoutDashboard
   },
   {
-    title: 'Crop Recommendation',
+    title: 'cropRecommendation',
     href: '/crop-recommendation',
     icon: Home
   },
   {
-    title: 'Disease Prediction',
+    title: 'diseasePrediction',
     href: '/disease-prediction',
     icon: ListChecks
   },
   {
-    title: 'Budget Planning',
+    title: 'budgetPlanning',
     href: '/budget-planning',
     icon: Coins
   },
   {
-    title: 'Fertilizer Recommendation',
+    title: 'fertilizerRecommendation',
     href: '/fertilizer-recommendation',
-    icon: SeedlingIcon
+    icon: Sprout
   },
 ];
 
@@ -75,7 +76,7 @@ const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
                 )}
               >
                 <link.icon className="w-5 h-5 text-gray-500 dark:text-gray-400 group-hover:text-gray-900 dark:group-hover:text-white" />
-                <span className="ml-3">{t(link.title.replace(/\s+/g, '').toLowerCase())}</span>
+                <span className="ml-3">{t(link.title)}</span>
               </Link>
             </li>
           ))}
