@@ -11,6 +11,7 @@ import Dashboard from "./pages/Dashboard";
 import CropRecommendation from "./pages/CropRecommendation";
 import DiseasePrediction from "./pages/DiseasePrediction";
 import BudgetPlanning from "./pages/BudgetPlanning";
+import FertilizerRecommendation from "./pages/FertilizerRecommendation";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
 import NotFound from "./pages/NotFound";
@@ -48,6 +49,11 @@ const App = () => (
               <Route path="/budget-planning" element={
                 <ProtectedRoute>
                   <BudgetPlanning />
+                </ProtectedRoute>
+              } />
+              <Route path="/fertilizer-recommendation" element={
+                <ProtectedRoute>
+                  <FertilizerRecommendation />
                 </ProtectedRoute>
               } />
               <Route path="*" element={<NotFound />} />

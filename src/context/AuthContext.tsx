@@ -1,6 +1,7 @@
 
 import { createContext, useContext, useState, useEffect, ReactNode } from "react";
 import { toast } from "sonner";
+import { supabase, signIn, signUp, signOut, getCurrentUser } from "@/lib/supabase";
 
 interface User {
   id: string;
@@ -26,74 +27,89 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
 
   useEffect(() => {
-    // Check for saved user in localStorage
-    const savedUser = localStorage.getItem("krishiUser");
-    if (savedUser) {
-      setUser(JSON.parse(savedUser));
-      setIsAuthenticated(true);
-    }
-    setIsLoading(false);
+    // Check if the user is already logged in
+    const checkUser = async () => {
+      try {
+        const currentUser = await getCurrentUser();
+        if (currentUser) {
+          setUser(currentUser);
+          setIsAuthenticated(true);
+        }
+      } catch (error) {
+        console.error("Error checking authentication:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    // Set up auth state listener
+    const { data: authListener } = supabase.auth.onAuthStateChange(
+      async (event, session) => {
+        if (event === "SIGNED_IN" && session) {
+          const currentUser = await getCurrentUser();
+          setUser(currentUser);
+          setIsAuthenticated(true);
+        } else if (event === "SIGNED_OUT") {
+          setUser(null);
+          setIsAuthenticated(false);
+        }
+      }
+    );
+
+    checkUser();
+
+    // Clean up subscription
+    return () => {
+      authListener.subscription.unsubscribe();
+    };
   }, []);
 
-  // Mock login function (in a real app, this would call an API)
   const login = async (email: string, password: string) => {
     setIsLoading(true);
     
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      // Demo user - in real app, this would come from backend
-      const mockUser = {
-        id: "1",
-        name: "Pranav Kolhe",
-        email,
-        avatar: "/lovable-uploads/a8aa18ab-a030-47a3-958e-48a63d870b2f.png"
-      };
-      
-      setUser(mockUser);
+      await signIn(email, password);
+      const currentUser = await getCurrentUser();
+      setUser(currentUser);
       setIsAuthenticated(true);
-      localStorage.setItem("krishiUser", JSON.stringify(mockUser));
       toast.success("Logged in successfully");
     } catch (error) {
-      toast.error("Login failed. Please try again.");
+      toast.error("Login failed. Please check your credentials and try again.");
       console.error("Login error:", error);
+      throw error;
     } finally {
       setIsLoading(false);
     }
   };
 
-  // Mock signup function
   const signup = async (name: string, email: string, password: string) => {
     setIsLoading(true);
     
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      const mockUser = {
-        id: "1",
-        name,
-        email,
-      };
-      
-      setUser(mockUser);
+      await signUp(name, email, password);
+      const currentUser = await getCurrentUser();
+      setUser(currentUser);
       setIsAuthenticated(true);
-      localStorage.setItem("krishiUser", JSON.stringify(mockUser));
       toast.success("Account created successfully");
     } catch (error) {
       toast.error("Signup failed. Please try again.");
       console.error("Signup error:", error);
+      throw error;
     } finally {
       setIsLoading(false);
     }
   };
 
-  const logout = () => {
-    setUser(null);
-    setIsAuthenticated(false);
-    localStorage.removeItem("krishiUser");
-    toast.success("Logged out successfully");
+  const logout = async () => {
+    try {
+      await signOut();
+      setUser(null);
+      setIsAuthenticated(false);
+      toast.success("Logged out successfully");
+    } catch (error) {
+      toast.error("Logout failed. Please try again.");
+      console.error("Logout error:", error);
+    }
   };
 
   return (

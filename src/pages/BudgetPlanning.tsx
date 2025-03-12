@@ -1,12 +1,13 @@
-
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import DashboardLayout from '@/components/DashboardLayout';
 import { useTranslation } from '@/hooks/useTranslation';
+import { useAuth } from '@/context/AuthContext';
+import { getBudgetItems, addBudgetItem, deleteBudgetItem } from '@/lib/supabase';
 import { Card } from '@/components/ui/card';
 import { 
   PlusCircle, 
   Trash2, 
-  DollarSign, 
+  IndianRupee, 
   CalendarRange, 
   BarChart3, 
   Download, 
@@ -26,6 +27,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { toast } from 'sonner';
 import { 
   BarChart, 
   Bar, 
@@ -48,62 +50,16 @@ interface BudgetItem {
   amount: number;
   date: string;
   type: 'income' | 'expense';
+  user_id?: string;
 }
 
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8', '#82ca9d'];
 
 const BudgetPlanning = () => {
   const { t } = useTranslation();
-  const [budgetItems, setBudgetItems] = useState<BudgetItem[]>([
-    { 
-      id: '1', 
-      category: 'Crops', 
-      description: 'Wheat Harvest', 
-      amount: 3500, 
-      date: '2023-05-15', 
-      type: 'income' 
-    },
-    { 
-      id: '2', 
-      category: 'Livestock', 
-      description: 'Milk Sales', 
-      amount: 1200, 
-      date: '2023-05-20', 
-      type: 'income' 
-    },
-    { 
-      id: '3', 
-      category: 'Seeds', 
-      description: 'Corn Seeds', 
-      amount: 500, 
-      date: '2023-04-10', 
-      type: 'expense' 
-    },
-    { 
-      id: '4', 
-      category: 'Fertilizer', 
-      description: 'NPK Fertilizer', 
-      amount: 800, 
-      date: '2023-04-15', 
-      type: 'expense' 
-    },
-    { 
-      id: '5', 
-      category: 'Equipment', 
-      description: 'Irrigation System', 
-      amount: 1500, 
-      date: '2023-03-30', 
-      type: 'expense' 
-    },
-    { 
-      id: '6', 
-      category: 'Labor', 
-      description: 'Seasonal Workers', 
-      amount: 1200, 
-      date: '2023-05-01', 
-      type: 'expense' 
-    }
-  ]);
+  const { user } = useAuth();
+  const [budgetItems, setBudgetItems] = useState<BudgetItem[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   
   const [newItem, setNewItem] = useState<Omit<BudgetItem, 'id'>>({
     category: '',
@@ -112,6 +68,25 @@ const BudgetPlanning = () => {
     date: new Date().toISOString().split('T')[0],
     type: 'expense'
   });
+
+  useEffect(() => {
+    const fetchBudgetItems = async () => {
+      if (!user) return;
+      
+      try {
+        setIsLoading(true);
+        const data = await getBudgetItems(user.id);
+        setBudgetItems(data || []);
+      } catch (error) {
+        console.error("Error fetching budget items:", error);
+        toast.error("Failed to load budget data");
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchBudgetItems();
+  }, [user]);
 
   const categoryOptions = [
     { value: 'Crops', label: 'Crops' },
@@ -127,31 +102,51 @@ const BudgetPlanning = () => {
     { value: 'Others', label: 'Others' }
   ];
 
-  const handleAddItem = () => {
-    if (!newItem.category || !newItem.description || newItem.amount <= 0) {
-      alert('Please fill all fields with valid values');
+  const handleAddItem = async () => {
+    if (!user) {
+      toast.error("You must be logged in to add budget items");
       return;
     }
     
-    const item: BudgetItem = {
-      ...newItem,
-      id: Date.now().toString()
-    };
+    if (!newItem.category || !newItem.description || newItem.amount <= 0) {
+      toast.error('Please fill all fields with valid values');
+      return;
+    }
     
-    setBudgetItems([...budgetItems, item]);
-    
-    // Reset form
-    setNewItem({
-      category: '',
-      description: '',
-      amount: 0,
-      date: new Date().toISOString().split('T')[0],
-      type: 'expense'
-    });
+    try {
+      setIsLoading(true);
+      const addedItem = await addBudgetItem(user.id, newItem);
+      setBudgetItems([...budgetItems, addedItem[0]]);
+      toast.success('Transaction added successfully');
+      
+      // Reset form
+      setNewItem({
+        category: '',
+        description: '',
+        amount: 0,
+        date: new Date().toISOString().split('T')[0],
+        type: 'expense'
+      });
+    } catch (error) {
+      console.error("Error adding budget item:", error);
+      toast.error("Failed to add transaction");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
-  const handleDeleteItem = (id: string) => {
-    setBudgetItems(budgetItems.filter(item => item.id !== id));
+  const handleDeleteItem = async (id: string) => {
+    try {
+      setIsLoading(true);
+      await deleteBudgetItem(id);
+      setBudgetItems(budgetItems.filter(item => item.id !== id));
+      toast.success('Transaction deleted successfully');
+    } catch (error) {
+      console.error("Error deleting budget item:", error);
+      toast.error("Failed to delete transaction");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const totalIncome = budgetItems
@@ -210,10 +205,10 @@ const BudgetPlanning = () => {
             <div className="flex justify-between items-center">
               <div>
                 <p className="text-sm font-medium text-gray-500">Total Income</p>
-                <h3 className="text-2xl font-bold text-gray-900">${totalIncome.toLocaleString()}</h3>
+                <h3 className="text-2xl font-bold text-gray-900">₹{totalIncome.toLocaleString()}</h3>
               </div>
               <div className="h-12 w-12 bg-green-100 rounded-full flex items-center justify-center">
-                <DollarSign className="h-6 w-6 text-green-600" />
+                <IndianRupee className="h-6 w-6 text-green-600" />
               </div>
             </div>
           </Card>
@@ -222,10 +217,10 @@ const BudgetPlanning = () => {
             <div className="flex justify-between items-center">
               <div>
                 <p className="text-sm font-medium text-gray-500">Total Expenses</p>
-                <h3 className="text-2xl font-bold text-gray-900">${totalExpenses.toLocaleString()}</h3>
+                <h3 className="text-2xl font-bold text-gray-900">₹{totalExpenses.toLocaleString()}</h3>
               </div>
               <div className="h-12 w-12 bg-red-100 rounded-full flex items-center justify-center">
-                <DollarSign className="h-6 w-6 text-red-600" />
+                <IndianRupee className="h-6 w-6 text-red-600" />
               </div>
             </div>
           </Card>
@@ -234,7 +229,7 @@ const BudgetPlanning = () => {
             <div className="flex justify-between items-center">
               <div>
                 <p className="text-sm font-medium text-gray-500">Net Balance</p>
-                <h3 className="text-2xl font-bold text-gray-900">${netBalance.toLocaleString()}</h3>
+                <h3 className="text-2xl font-bold text-gray-900">₹{netBalance.toLocaleString()}</h3>
               </div>
               <div className={`h-12 w-12 rounded-full flex items-center justify-center ${
                 netBalance >= 0 ? 'bg-blue-100' : 'bg-amber-100'

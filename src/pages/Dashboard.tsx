@@ -1,7 +1,9 @@
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import DashboardLayout from '@/components/DashboardLayout';
 import { useTranslation } from '@/hooks/useTranslation';
+import { useAuth } from '@/context/AuthContext';
+import { supabase, getDashboardData } from '@/lib/supabase';
 import { 
   BarChart3, 
   Droplets, 
@@ -32,10 +34,43 @@ import {
 } from 'recharts';
 import { Card } from '@/components/ui/card';
 
+interface DashboardData {
+  totalCrops: number;
+  harvestReady: number;
+  pendingTasks: number;
+  completedTasks: number;
+}
+
 const Dashboard = () => {
   const { t } = useTranslation();
+  const { user } = useAuth();
   const [message, setMessage] = useState('');
   const [chatMessages, setChatMessages] = useState<{ text: string; isBot: boolean }[]>([]);
+  const [dashboardData, setDashboardData] = useState<DashboardData>({
+    totalCrops: 0,
+    harvestReady: 0,
+    pendingTasks: 0,
+    completedTasks: 0
+  });
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchDashboardData = async () => {
+      if (!user) return;
+      
+      try {
+        setIsLoading(true);
+        const data = await getDashboardData(user.id);
+        setDashboardData(data);
+      } catch (error) {
+        console.error("Error fetching dashboard data:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchDashboardData();
+  }, [user]);
 
   const handleSendMessage = (e: React.FormEvent) => {
     e.preventDefault();
@@ -109,7 +144,7 @@ const Dashboard = () => {
       <div className="space-y-6">
         <div>
           <h1 className="text-2xl font-bold text-gray-800 dark:text-gray-100">
-            {t('welcome')}, Pranav
+            {t('welcome')}, {user?.name || t('farmer')}
           </h1>
           <p className="text-gray-500 dark:text-gray-400">
             {new Date().toLocaleDateString(undefined, { 
@@ -129,7 +164,7 @@ const Dashboard = () => {
             </div>
             <div>
               <p className="text-sm text-gray-500">{t('totalCrops')}</p>
-              <h3 className="text-2xl font-bold text-gray-800">12</h3>
+              <h3 className="text-2xl font-bold text-gray-800">{isLoading ? "-" : dashboardData.totalCrops}</h3>
             </div>
           </Card>
           
@@ -139,7 +174,7 @@ const Dashboard = () => {
             </div>
             <div>
               <p className="text-sm text-gray-500">{t('harvestReady')}</p>
-              <h3 className="text-2xl font-bold text-gray-800">4</h3>
+              <h3 className="text-2xl font-bold text-gray-800">{isLoading ? "-" : dashboardData.harvestReady}</h3>
             </div>
           </Card>
           
@@ -149,7 +184,7 @@ const Dashboard = () => {
             </div>
             <div>
               <p className="text-sm text-gray-500">{t('pendingTasks')}</p>
-              <h3 className="text-2xl font-bold text-gray-800">8</h3>
+              <h3 className="text-2xl font-bold text-gray-800">{isLoading ? "-" : dashboardData.pendingTasks}</h3>
             </div>
           </Card>
           
@@ -159,7 +194,7 @@ const Dashboard = () => {
             </div>
             <div>
               <p className="text-sm text-gray-500">{t('completedTasks')}</p>
-              <h3 className="text-2xl font-bold text-gray-800">16</h3>
+              <h3 className="text-2xl font-bold text-gray-800">{isLoading ? "-" : dashboardData.completedTasks}</h3>
             </div>
           </Card>
         </div>
