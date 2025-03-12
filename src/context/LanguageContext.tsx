@@ -1,4 +1,3 @@
-
 import { createContext, useContext, useState, useEffect, ReactNode } from "react";
 
 type Language = "english" | "hindi" | "marathi" | "punjabi" | "bengali" | "tamil";
@@ -63,9 +62,9 @@ const translations: Record<Language, Record<string, string>> = {
     "budget_planning": "ਬਜਟ ਯੋਜਨਾਬੰਦੀ",
     "logout": "ਲੌਗ ਆਊਟ",
     "welcome": "ਜੀ ਆਇਆਂ ਨੂੰ",
-    "analyzing_crop_market": "ਫਸਲ ਮਾਰਕੀਟ ਦੇ ਰੁਝਾਨਾਂ ਦਾ ਵਿਸ਼ਲੇਸ਼ਣ",
+    "analyzing_crop_market": "ਫਸਲ ਮਾਰਕੀਟ ਦੇ ਰੁਝਾਨਾं ਦਾ ਵਿਸ਼ਲੇਸ਼ਣ",
     "monitoring_soil": "ਮਿੱਟੀ ਦੇ ਪੋਸ਼ਕ ਤੱਤਾਂ ਦੀ ਸਿਹਤ ਦੀ ਨਿਗਰਾਨੀ",
-    "tracking_resource": "ਸਰੋਤ ਵਰਤੋਂ ਦੀ ਟਰੈਕਿੰਗ",
+    "tracking_resource": "ਸਰੋਤ ਵरਤੋਂ ਦੀ ਟਰੈਕਿੰਗ",
     "add_farm": "ਫਾਰਮ ਸ਼ਾਮਲ ਕਰੋ",
     "agri_news": "ਖੇਤੀਬਾੜੀ ਖ਼ਬਰਾਂ ਅਤੇ ਸਿੱਖਿਆ",
     "assistant": "ਤੁਹਾਡਾ ਸਮਾਰਟ ਖੇਤੀਬਾੜੀ ਸਹਾਇਕ",

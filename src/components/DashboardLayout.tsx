@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
 import Sidebar from '@/components/Sidebar';
 import { Menu } from 'lucide-react';
-import { LanguageSelector } from '@/components/LanguageSelector';
+import LanguageSelector from '@/components/LanguageSelector';
 import { useTranslation } from '@/hooks/useTranslation';
 
 interface DashboardLayoutProps {

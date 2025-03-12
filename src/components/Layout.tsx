@@ -1,27 +1,26 @@
 
-import { ReactNode } from "react";
-import { useAuth } from "@/context/AuthContext";
-import Sidebar from "./Sidebar";
-import { cn } from "@/lib/utils";
+import React from 'react';
+import Sidebar from './Sidebar';
 
 interface LayoutProps {
-  children: ReactNode;
+  children: React.ReactNode;
 }
 
 const Layout = ({ children }: LayoutProps) => {
-  const { isAuthenticated } = useAuth();
+  const [isSidebarOpen, setIsSidebarOpen] = React.useState(true);
 
   return (
-    <div className={cn("flex min-h-screen bg-gray-50")}>
-      {isAuthenticated && <Sidebar />}
-      <main
-        className={cn(
-          "flex-1 transition-all duration-300",
-          isAuthenticated ? "ml-0" : "ml-0"
-        )}
-      >
-        <div className="p-6 animate-fade-in">{children}</div>
-      </main>
+    <div className="flex h-screen overflow-hidden">
+      <Sidebar 
+        isOpen={isSidebarOpen} 
+        onClose={() => setIsSidebarOpen(false)} 
+      />
+      
+      <div className="flex-1 overflow-auto">
+        <main className="p-4 md:p-6">
+          {children}
+        </main>
+      </div>
     </div>
   );
 };
