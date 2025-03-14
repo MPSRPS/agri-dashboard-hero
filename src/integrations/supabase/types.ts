@@ -9,7 +9,181 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      [_ in never]: never
+      disease_environmental_factors: {
+        Row: {
+          created_at: string
+          disease_id: string
+          factor_name: string
+          factor_value: string
+          id: string
+        }
+        Insert: {
+          created_at?: string
+          disease_id: string
+          factor_name: string
+          factor_value: string
+          id?: string
+        }
+        Update: {
+          created_at?: string
+          disease_id?: string
+          factor_name?: string
+          factor_value?: string
+          id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "disease_environmental_factors_disease_id_fkey"
+            columns: ["disease_id"]
+            isOneToOne: false
+            referencedRelation: "plant_diseases"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      disease_preventive_measures: {
+        Row: {
+          created_at: string
+          disease_id: string
+          id: string
+          measure: string
+        }
+        Insert: {
+          created_at?: string
+          disease_id: string
+          id?: string
+          measure: string
+        }
+        Update: {
+          created_at?: string
+          disease_id?: string
+          id?: string
+          measure?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "disease_preventive_measures_disease_id_fkey"
+            columns: ["disease_id"]
+            isOneToOne: false
+            referencedRelation: "plant_diseases"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      disease_symptoms: {
+        Row: {
+          created_at: string
+          disease_id: string
+          id: string
+          symptom: string
+        }
+        Insert: {
+          created_at?: string
+          disease_id: string
+          id?: string
+          symptom: string
+        }
+        Update: {
+          created_at?: string
+          disease_id?: string
+          id?: string
+          symptom?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "disease_symptoms_disease_id_fkey"
+            columns: ["disease_id"]
+            isOneToOne: false
+            referencedRelation: "plant_diseases"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      disease_treatments: {
+        Row: {
+          created_at: string
+          disease_id: string
+          id: string
+          treatment: string
+        }
+        Insert: {
+          created_at?: string
+          disease_id: string
+          id?: string
+          treatment: string
+        }
+        Update: {
+          created_at?: string
+          disease_id?: string
+          id?: string
+          treatment?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "disease_treatments_disease_id_fkey"
+            columns: ["disease_id"]
+            isOneToOne: false
+            referencedRelation: "plant_diseases"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      plant_analysis_history: {
+        Row: {
+          analysis_date: string
+          confidence: number
+          id: string
+          image_path: string
+          main_disease_id: string | null
+          user_id: string | null
+        }
+        Insert: {
+          analysis_date?: string
+          confidence: number
+          id?: string
+          image_path: string
+          main_disease_id?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          analysis_date?: string
+          confidence?: number
+          id?: string
+          image_path?: string
+          main_disease_id?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "plant_analysis_history_main_disease_id_fkey"
+            columns: ["main_disease_id"]
+            isOneToOne: false
+            referencedRelation: "plant_diseases"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      plant_diseases: {
+        Row: {
+          created_at: string
+          description: string
+          id: string
+          name: string
+        }
+        Insert: {
+          created_at?: string
+          description: string
+          id?: string
+          name: string
+        }
+        Update: {
+          created_at?: string
+          description?: string
+          id?: string
+          name?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never

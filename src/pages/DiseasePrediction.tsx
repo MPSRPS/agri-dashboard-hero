@@ -1,16 +1,26 @@
-import { useState, useRef } from 'react';
+
+import { useRef } from 'react';
 import DashboardLayout from '@/components/DashboardLayout';
 import { useTranslation } from '@/hooks/useTranslation';
 import { Card } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
 import { AlertTriangle, Upload, X, Check, Info, Thermometer, Droplets, Leaf } from 'lucide-react';
+import { usePlantDiseaseDetection } from '@/hooks/usePlantDiseaseDetection';
+import { Skeleton } from '@/components/ui/skeleton';
 
 const DiseasePrediction = () => {
   const { t } = useTranslation();
-  const [selectedImage, setSelectedImage] = useState<string | null>(null);
-  const [isDragging, setIsDragging] = useState(false);
-  const [loading, setLoading] = useState(false);
-  const [prediction, setPrediction] = useState<any>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const {
+    selectedImage,
+    isDragging,
+    setIsDragging,
+    loading,
+    prediction,
+    handleFile,
+    resetImage,
+    analyzeImage
+  } = usePlantDiseaseDetection();
 
   const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
@@ -39,99 +49,10 @@ const DiseasePrediction = () => {
     }
   };
 
-  const handleFile = (file: File) => {
-    if (!file.type.includes('image/')) {
-      alert('Please upload an image file');
-      return;
-    }
-    
-    const reader = new FileReader();
-    reader.onload = () => {
-      setSelectedImage(reader.result as string);
-      setPrediction(null);
-    };
-    reader.readAsDataURL(file);
-  };
-
   const handleUploadClick = () => {
     if (fileInputRef.current) {
       fileInputRef.current.click();
     }
-  };
-
-  const resetImage = () => {
-    setSelectedImage(null);
-    setPrediction(null);
-    if (fileInputRef.current) {
-      fileInputRef.current.value = '';
-    }
-  };
-
-  const analyzeImage = () => {
-    if (!selectedImage) return;
-    
-    setLoading(true);
-    
-    // Simulate API call to disease prediction model
-    setTimeout(() => {
-      // Mock prediction result - in a real app, this would come from your ML model
-      const diseases = [
-        {
-          name: 'Tomato Late Blight',
-          confidence: 0.89,
-          description: 'Late blight is a potentially devastating disease of tomato and potato, infecting leaves, stems, and fruits.',
-          symptoms: [
-            'Dark, water-soaked lesions on leaves',
-            'White fungal growth on leaf undersides',
-            'Brown lesions on stems',
-            'Firm, dark, greasy-looking lesions on fruits'
-          ],
-          treatment: [
-            'Remove and destroy infected plants',
-            'Apply copper-based fungicides preventatively',
-            'Ensure good air circulation',
-            'Avoid overhead irrigation',
-            'Plant resistant varieties'
-          ],
-          preventive_measures: [
-            'Crop rotation',
-            'Clean garden tools',
-            'Use disease-free transplants',
-            'Water at the base of plants',
-            'Monitor plants regularly'
-          ]
-        },
-        {
-          name: 'Early Blight',
-          confidence: 0.08,
-          description: 'Early blight is a common fungal disease of tomato, causing leaf spots, stem cankers, and fruit rot.',
-          symptoms: [
-            'Dark spots with concentric rings on leaves',
-            'Yellowing around leaf spots',
-            'Spots beginning on older leaves',
-            'Sunken lesions on fruits'
-          ]
-        },
-        {
-          name: 'Bacterial Spot',
-          confidence: 0.03,
-          description: 'Bacterial spot is a common disease of tomatoes and peppers, causing spots on leaves, stems, and fruits.',
-          symptoms: [
-            'Small, water-soaked spots on leaves',
-            'Spots turning dark brown to black',
-            'Yellowing around leaf spots',
-            'Rough, scabby spots on fruits'
-          ]
-        }
-      ];
-      
-      setPrediction({
-        diseases: diseases,
-        mainDisease: diseases[0]
-      });
-      
-      setLoading(false);
-    }, 2000);
   };
 
   return (
@@ -169,12 +90,12 @@ const DiseasePrediction = () => {
                     <p className="text-gray-600 text-center mb-4">
                       Drag and drop an image here, or click to browse
                     </p>
-                    <button
+                    <Button
                       onClick={handleUploadClick}
-                      className="px-4 py-2 bg-krishi-600 text-white rounded-md hover:bg-krishi-700 transition-colors"
+                      className="bg-krishi-600 hover:bg-krishi-700"
                     >
                       Browse Files
-                    </button>
+                    </Button>
                     <input
                       type="file"
                       ref={fileInputRef}
@@ -194,16 +115,18 @@ const DiseasePrediction = () => {
                         alt="Selected plant"
                         className="max-h-64 max-w-full mx-auto rounded-lg object-contain"
                       />
-                      <button
+                      <Button
                         onClick={resetImage}
-                        className="absolute top-2 right-2 p-1 bg-white rounded-full shadow-md hover:bg-gray-100 transition-colors"
+                        variant="outline"
+                        size="icon"
+                        className="absolute top-2 right-2 bg-white rounded-full shadow-md hover:bg-gray-100 transition-colors"
                       >
                         <X className="h-5 w-5 text-gray-600" />
-                      </button>
+                      </Button>
                     </div>
                     
                     <div className="flex justify-center">
-                      <button
+                      <Button
                         onClick={analyzeImage}
                         disabled={loading}
                         className="px-6 py-2 bg-krishi-600 text-white rounded-md hover:bg-krishi-700 transition-colors disabled:opacity-70 disabled:cursor-not-allowed"
@@ -216,7 +139,7 @@ const DiseasePrediction = () => {
                         ) : (
                           <span>Analyze Image</span>
                         )}
-                      </button>
+                      </Button>
                     </div>
                   </div>
                 )}
@@ -242,7 +165,17 @@ const DiseasePrediction = () => {
           {/* Right Column - Disease Information */}
           <div className="lg:col-span-3">
             <Card className="border-gray-200 h-full">
-              {!prediction ? (
+              {loading ? (
+                <div className="p-6 h-full flex flex-col space-y-6">
+                  <Skeleton className="h-20 w-full rounded-lg" />
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <Skeleton className="h-40 w-full rounded-lg" />
+                    <Skeleton className="h-40 w-full rounded-lg" />
+                  </div>
+                  <Skeleton className="h-40 w-full rounded-lg" />
+                  <Skeleton className="h-40 w-full rounded-lg" />
+                </div>
+              ) : !prediction ? (
                 <div className="h-full flex flex-col items-center justify-center p-10 text-center">
                   <AlertTriangle className="h-12 w-12 text-gray-300 mb-4" />
                   <h3 className="text-xl font-medium text-gray-700 mb-2">No Analysis Yet</h3>
@@ -264,7 +197,7 @@ const DiseasePrediction = () => {
                       </div>
                       <div className="bg-white border border-green-100 rounded-full px-3 py-1 text-sm font-medium text-green-800 flex items-center gap-1">
                         <Check className="h-4 w-4" />
-                        {Math.round(prediction.mainDisease.confidence * 100)}% Match
+                        {Math.round((prediction.mainDisease.confidence || 0) * 100)}% Match
                       </div>
                     </div>
                   </div>
@@ -278,14 +211,18 @@ const DiseasePrediction = () => {
                         </h4>
                       </div>
                       <div className="p-4">
-                        <ul className="space-y-2">
-                          {prediction.mainDisease.symptoms.map((symptom: string, index: number) => (
-                            <li key={index} className="flex items-center gap-2">
-                              <div className="h-2 w-2 rounded-full bg-amber-500"></div>
-                              <span className="text-gray-700 text-sm">{symptom}</span>
-                            </li>
-                          ))}
-                        </ul>
+                        {prediction.mainDisease.symptoms && prediction.mainDisease.symptoms.length > 0 ? (
+                          <ul className="space-y-2">
+                            {prediction.mainDisease.symptoms.map((symptom, index) => (
+                              <li key={index} className="flex items-center gap-2">
+                                <div className="h-2 w-2 rounded-full bg-amber-500"></div>
+                                <span className="text-gray-700 text-sm">{symptom}</span>
+                              </li>
+                            ))}
+                          </ul>
+                        ) : (
+                          <p className="text-gray-500 text-sm">No symptoms information available</p>
+                        )}
                       </div>
                     </div>
                     
@@ -297,31 +234,23 @@ const DiseasePrediction = () => {
                         </h4>
                       </div>
                       <div className="p-4">
-                        <div className="space-y-4">
-                          <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-2">
-                              <Thermometer className="h-4 w-4 text-red-500" />
-                              <span className="text-sm text-gray-700">Temperature</span>
-                            </div>
-                            <span className="text-sm font-medium">Warm (20-25°C)</span>
+                        {prediction.mainDisease.environmental_factors && prediction.mainDisease.environmental_factors.length > 0 ? (
+                          <div className="space-y-4">
+                            {prediction.mainDisease.environmental_factors.map((factor, index) => (
+                              <div key={index} className="flex items-center justify-between">
+                                <div className="flex items-center gap-2">
+                                  {factor.name === 'Temperature' && <Thermometer className="h-4 w-4 text-red-500" />}
+                                  {factor.name === 'Humidity' && <Droplets className="h-4 w-4 text-blue-500" />}
+                                  {factor.name === 'Plant Stage' && <Leaf className="h-4 w-4 text-green-500" />}
+                                  <span className="text-sm text-gray-700">{factor.name}</span>
+                                </div>
+                                <span className="text-sm font-medium">{factor.value}</span>
+                              </div>
+                            ))}
                           </div>
-                          
-                          <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-2">
-                              <Droplets className="h-4 w-4 text-blue-500" />
-                              <span className="text-sm text-gray-700">Humidity</span>
-                            </div>
-                            <span className="text-sm font-medium">High (&gt;75%)</span>
-                          </div>
-                          
-                          <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-2">
-                              <Leaf className="h-4 w-4 text-green-500" />
-                              <span className="text-sm text-gray-700">Plant Stage</span>
-                            </div>
-                            <span className="text-sm font-medium">Vegetative/Fruiting</span>
-                          </div>
-                        </div>
+                        ) : (
+                          <p className="text-gray-500 text-sm">No environmental factors information available</p>
+                        )}
                       </div>
                     </div>
                   </div>
@@ -334,16 +263,20 @@ const DiseasePrediction = () => {
                       </h4>
                     </div>
                     <div className="p-4">
-                      <ul className="space-y-2">
-                        {prediction.mainDisease.treatment.map((item: string, index: number) => (
-                          <li key={index} className="flex items-start gap-2">
-                            <div className="h-5 w-5 rounded-full bg-green-100 flex-shrink-0 flex items-center justify-center mt-0.5">
-                              <Check className="h-3 w-3 text-green-600" />
-                            </div>
-                            <span className="text-gray-700 text-sm">{item}</span>
-                          </li>
-                        ))}
-                      </ul>
+                      {prediction.mainDisease.treatments && prediction.mainDisease.treatments.length > 0 ? (
+                        <ul className="space-y-2">
+                          {prediction.mainDisease.treatments.map((item, index) => (
+                            <li key={index} className="flex items-start gap-2">
+                              <div className="h-5 w-5 rounded-full bg-green-100 flex-shrink-0 flex items-center justify-center mt-0.5">
+                                <Check className="h-3 w-3 text-green-600" />
+                              </div>
+                              <span className="text-gray-700 text-sm">{item}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      ) : (
+                        <p className="text-gray-500 text-sm">No treatment recommendations available</p>
+                      )}
                     </div>
                   </div>
                   
@@ -355,30 +288,34 @@ const DiseasePrediction = () => {
                       </h4>
                     </div>
                     <div className="p-4">
-                      <ul className="space-y-2">
-                        {prediction.mainDisease.preventive_measures.map((item: string, index: number) => (
-                          <li key={index} className="flex items-start gap-2">
-                            <div className="h-5 w-5 rounded-full bg-blue-100 flex-shrink-0 flex items-center justify-center mt-0.5">
-                              <Info className="h-3 w-3 text-blue-600" />
-                            </div>
-                            <span className="text-gray-700 text-sm">{item}</span>
-                          </li>
-                        ))}
-                      </ul>
+                      {prediction.mainDisease.preventive_measures && prediction.mainDisease.preventive_measures.length > 0 ? (
+                        <ul className="space-y-2">
+                          {prediction.mainDisease.preventive_measures.map((item, index) => (
+                            <li key={index} className="flex items-start gap-2">
+                              <div className="h-5 w-5 rounded-full bg-blue-100 flex-shrink-0 flex items-center justify-center mt-0.5">
+                                <Info className="h-3 w-3 text-blue-600" />
+                              </div>
+                              <span className="text-gray-700 text-sm">{item}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      ) : (
+                        <p className="text-gray-500 text-sm">No preventive measures available</p>
+                      )}
                     </div>
                   </div>
                   
                   <div className="mt-auto pt-6">
                     <h4 className="font-medium text-gray-700 mb-2">Other Possible Diseases</h4>
                     <div className="flex flex-wrap gap-2">
-                      {prediction.diseases.slice(1).map((disease: any, index: number) => (
+                      {prediction.diseases.slice(1).map((disease, index) => (
                         <div 
                           key={index}
                           className="bg-gray-100 px-3 py-1 rounded-full text-sm text-gray-700 flex items-center gap-1"
                         >
                           <span>{disease.name}</span>
                           <span className="text-xs text-gray-500">
-                            ({Math.round(disease.confidence * 100)}%)
+                            ({Math.round((disease.confidence || 0) * 100)}%)
                           </span>
                         </div>
                       ))}
