@@ -1,11 +1,14 @@
 
 import { useState, useRef, useEffect } from "react";
 import { useLanguage } from "@/context/LanguageContext";
+import { useAuth } from "@/context/AuthContext";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Send, Mic, Bot } from "lucide-react";
+import { Send, Bot } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "@/hooks/use-toast";
 
 interface Message {
   id: string;
@@ -16,6 +19,7 @@ interface Message {
 
 const Chatbot = () => {
   const { t, currentLanguage } = useLanguage();
+  const { user } = useAuth();
   const [messages, setMessages] = useState<Message[]>([
     {
       id: "welcome",
@@ -26,6 +30,7 @@ const Chatbot = () => {
   ]);
   const [input, setInput] = useState("");
   const [isExpanded, setIsExpanded] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -36,8 +41,8 @@ const Chatbot = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   };
 
-  const handleSendMessage = () => {
-    if (!input.trim()) return;
+  const handleSendMessage = async () => {
+    if (!input.trim() || isLoading) return;
 
     // Add user message
     const userMessage: Message = {
@@ -49,27 +54,51 @@ const Chatbot = () => {
 
     setMessages((prev) => [...prev, userMessage]);
     setInput("");
+    setIsLoading(true);
 
-    // Simulate bot response after a short delay
-    setTimeout(() => {
-      const botResponses = {
-        english: "I'm processing your query. In a real application, this would connect to an AI service for personalized agricultural advice.",
-        hindi: "मैं आपकी क्वेरी प्रोसेस कर रहा हूं। एक वास्तविक एप्लिकेशन में, यह व्यक्तिगत कृषि सलाह के लिए एक AI सेवा से कनेक्ट होगा।",
-        marathi: "मी तुमची चौकशी प्रक्रिया करत आहे. वास्तविक अनुप्रयोगात, हे वैयक्तिक कृषी सल्ल्यासाठी एआय सेवेशी कनेक्ट होईल.",
-        punjabi: "ਮੈਂ ਤੁਹਾਡੀ ਪੁੱਛਗਿੱਛ 'ਤੇ ਕਾਰਵਾਈ ਕਰ ਰਿਹਾ ਹਾਂ। ਇੱਕ ਅਸਲ ਐਪਲੀਕੇਸ਼ਨ ਵਿੱਚ, ਇਹ ਨਿੱਜੀ ਖੇਤੀਬਾੜੀ ਸਲਾਹ ਲਈ ਇੱਕ AI ਸੇਵਾ ਨਾਲ ਜੁੜੇਗਾ।",
-        bengali: "আমি আপনার কোয়েরি প্রক্রিয়া করছি। একটি বাস্তব অ্যাপ্লিকেশনে, এটি ব্যক্তিগতকৃত কৃষি পরামর্শের জন্য একটি এআই পরিষেবার সাথে সংযুক্ত হবে।",
-        tamil: "நான் உங்கள் வினவலை செயலாக்குகிறேன். ஒரு உண்மையான பயன்பாட்டில், இது தனிப்பயனாக்கப்பட்ட விவசாய ஆலோசனைக்காக ஒரு AI சேவையுடன் இணைக்கப்படும்."
-      };
-      
-      const botMessage: Message = {
-        id: Date.now().toString(),
-        text: botResponses[currentLanguage as keyof typeof botResponses] || botResponses.english,
+    try {
+      // Call the KrishiBot edge function
+      const { data, error } = await supabase.functions.invoke("krishibot", {
+        body: {
+          message: input,
+          language: currentLanguage,
+          userId: user?.id
+        }
+      });
+
+      if (error) {
+        throw error;
+      }
+
+      // Add bot response
+      const botResponse: Message = {
+        id: (Date.now() + 1).toString(),
+        text: data.text,
         sender: "bot",
         timestamp: new Date(),
       };
 
-      setMessages((prev) => [...prev, botMessage]);
-    }, 1000);
+      setMessages((prev) => [...prev, botResponse]);
+    } catch (error) {
+      console.error("Error getting bot response:", error);
+      toast({
+        title: "Error",
+        description: "Failed to get response from assistant",
+        variant: "destructive",
+      });
+
+      // Add fallback error message
+      const errorMessage: Message = {
+        id: (Date.now() + 1).toString(),
+        text: "I'm having trouble connecting right now. Please try again later.",
+        sender: "bot",
+        timestamp: new Date(),
+      };
+
+      setMessages((prev) => [...prev, errorMessage]);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -122,6 +151,15 @@ const Chatbot = () => {
                 {message.text}
               </div>
             ))}
+            {isLoading && (
+              <div className="bg-gray-100 text-gray-800 max-w-[80%] p-2 rounded-lg text-sm">
+                <div className="flex space-x-1">
+                  <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"></div>
+                  <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: "0.2s" }}></div>
+                  <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: "0.4s" }}></div>
+                </div>
+              </div>
+            )}
             <div ref={messagesEndRef} />
           </div>
           
@@ -133,11 +171,13 @@ const Chatbot = () => {
                 onChange={(e) => setInput(e.target.value)}
                 onKeyDown={handleKeyDown}
                 className="text-sm"
+                disabled={isLoading}
               />
               <Button 
                 size="icon" 
                 onClick={handleSendMessage}
                 className="bg-krishi-500 hover:bg-krishi-600"
+                disabled={isLoading}
               >
                 <Send size={16} />
               </Button>
