@@ -15,6 +15,7 @@ import Login from "./pages/Login";
 import Register from "./pages/Register";
 import NotFound from "./pages/NotFound";
 import ProtectedRoute from "./components/ProtectedRoute";
+import Chatbot from "./components/Chatbot";
 
 const queryClient = new QueryClient();
 
@@ -52,6 +53,7 @@ const App = () => (
               } />
               <Route path="*" element={<NotFound />} />
             </Routes>
+            <Chatbot />
           </BrowserRouter>
         </TooltipProvider>
       </LanguageProvider>
