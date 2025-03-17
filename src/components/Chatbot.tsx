@@ -57,12 +57,19 @@ const Chatbot = () => {
     setIsLoading(true);
 
     try {
-      // Call the KrishiBot edge function
+      // Prepare message history for context
+      const messageHistory = messages.map(msg => ({
+        text: msg.text,
+        sender: msg.sender
+      }));
+
+      // Call the KrishiBot edge function with message history
       const { data, error } = await supabase.functions.invoke("krishibot", {
         body: {
           message: input,
           language: currentLanguage,
-          userId: user?.id
+          userId: user?.id,
+          messageHistory: messageHistory
         }
       });
 
@@ -110,7 +117,7 @@ const Chatbot = () => {
   return (
     <Card 
       className={cn(
-        "fixed right-6 bottom-6 bg-white overflow-hidden transition-all duration-300 ease-in-out border shadow-lg",
+        "fixed right-6 bottom-6 bg-white overflow-hidden transition-all duration-300 ease-in-out border shadow-lg z-50",
         isExpanded 
           ? "w-80 h-96 rounded-xl" 
           : "w-14 h-14 rounded-full cursor-pointer chatbot-pulse"

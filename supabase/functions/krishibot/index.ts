@@ -16,13 +16,35 @@ serve(async (req) => {
   }
 
   try {
-    const { message, language, userId } = await req.json();
+    const { message, language, userId, messageHistory } = await req.json();
 
     // Create system prompt customized for agricultural assistant
     const systemPrompt = `You are KrishiBot, an agricultural AI assistant specialized in helping farmers. 
     Provide advice on crop management, disease identification, weather interpretation, and farming best practices.
     Keep responses concise, practical, and focused on agricultural topics.
     Current language: ${language || 'english'}`;
+
+    // Prepare conversation history for context
+    let messages = [
+      { role: 'system', content: systemPrompt },
+    ];
+    
+    // Add message history if provided
+    if (messageHistory && Array.isArray(messageHistory)) {
+      // Add only the last 10 messages to avoid token limits
+      const recentMessages = messageHistory.slice(-10);
+      recentMessages.forEach(msg => {
+        messages.push({
+          role: msg.sender === 'user' ? 'user' : 'assistant',
+          content: msg.text
+        });
+      });
+    }
+    
+    // Add the current message
+    messages.push({ role: 'user', content: message });
+
+    console.log("Sending to OpenAI:", JSON.stringify({ messages }));
 
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
@@ -32,10 +54,7 @@ serve(async (req) => {
       },
       body: JSON.stringify({
         model: 'gpt-4o-mini', // Using a fast, efficient model
-        messages: [
-          { role: 'system', content: systemPrompt },
-          { role: 'user', content: message }
-        ],
+        messages: messages,
         temperature: 0.7,
       }),
     });
@@ -50,7 +69,6 @@ serve(async (req) => {
     const botResponse = data.choices[0].message.content;
 
     // Save conversation to database if userId is provided
-    // This could be expanded to maintain conversation history
     if (userId) {
       // For now we're just logging - in a real system we'd save to a database
       console.log(`Saving conversation for user ${userId}: Q: ${message}, A: ${botResponse}`);
