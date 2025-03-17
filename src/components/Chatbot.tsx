@@ -17,6 +17,7 @@ const Chatbot = () => {
     isLoading,
     handleSendMessage,
     handleKeyDown,
+    handleAttachmentChange,
     t
   } = useChatbot();
 
@@ -25,7 +26,7 @@ const Chatbot = () => {
       className={cn(
         "fixed right-6 bottom-6 bg-white overflow-hidden transition-all duration-300 ease-in-out border shadow-lg z-50",
         isExpanded 
-          ? "w-80 h-96 rounded-xl" 
+          ? "w-80 h-[500px] rounded-xl" 
           : "w-14 h-14 rounded-full cursor-pointer chatbot-pulse"
       )}
       onClick={() => !isExpanded && setIsExpanded(true)}
@@ -52,6 +53,7 @@ const Chatbot = () => {
             onKeyDown={handleKeyDown}
             placeholder={t("ask_question")}
             disabled={isLoading}
+            onAttachmentChange={handleAttachmentChange}
           />
         </div>
       ) : (

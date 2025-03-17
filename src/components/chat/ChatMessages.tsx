@@ -7,6 +7,11 @@ export interface Message {
   text: string;
   sender: "user" | "bot";
   timestamp: Date;
+  attachment?: {
+    type: "image" | "file";
+    url: string;
+    name: string;
+  };
 }
 
 interface ChatMessagesProps {
@@ -32,6 +37,7 @@ const ChatMessages = ({ messages, isLoading }: ChatMessagesProps) => {
           key={message.id}
           text={message.text}
           sender={message.sender}
+          attachment={message.attachment}
         />
       ))}
       {isLoading && (

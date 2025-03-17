@@ -20,9 +20,51 @@ export const useChatbot = () => {
   const [input, setInput] = useState("");
   const [isExpanded, setIsExpanded] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [selectedAttachment, setSelectedAttachment] = useState<File | null>(null);
+
+  const handleAttachmentChange = (file: File | null) => {
+    setSelectedAttachment(file);
+  };
+
+  const uploadAttachment = async (file: File): Promise<string | null> => {
+    try {
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${Math.random().toString(36).substring(2)}.${fileExt}`;
+      const filePath = `${user?.id || 'anonymous'}/${fileName}`;
+      
+      // For now, we'll just return a mock URL since we don't have storage set up
+      // In a real implementation, this would upload to Supabase Storage
+      return URL.createObjectURL(file);
+    } catch (error) {
+      console.error("Error uploading file:", error);
+      return null;
+    }
+  };
 
   const handleSendMessage = async () => {
-    if (!input.trim() || isLoading) return;
+    if ((!input.trim() && !selectedAttachment) || isLoading) return;
+
+    let attachmentData = null;
+    
+    // Handle file upload if there's an attachment
+    if (selectedAttachment) {
+      const isImage = selectedAttachment.type.startsWith('image/');
+      const fileUrl = await uploadAttachment(selectedAttachment);
+      
+      if (fileUrl) {
+        attachmentData = {
+          type: isImage ? "image" : "file",
+          url: fileUrl,
+          name: selectedAttachment.name
+        };
+      } else {
+        toast({
+          title: "Upload Failed",
+          description: "Failed to upload the attachment",
+          variant: "destructive",
+        });
+      }
+    }
 
     // Add user message
     const userMessage: Message = {
@@ -30,10 +72,12 @@ export const useChatbot = () => {
       text: input,
       sender: "user",
       timestamp: new Date(),
+      attachment: attachmentData
     };
 
     setMessages((prev) => [...prev, userMessage]);
     setInput("");
+    setSelectedAttachment(null);
     setIsLoading(true);
 
     try {
@@ -43,10 +87,15 @@ export const useChatbot = () => {
         sender: msg.sender
       }));
 
+      // Add information about the attachment if present
+      const messageWithAttachment = attachmentData 
+        ? `${input} [Attached: ${attachmentData.name}]` 
+        : input;
+
       // Call the KrishiBot edge function with message history
       const { data, error } = await supabase.functions.invoke("krishibot", {
         body: {
-          message: input,
+          message: messageWithAttachment,
           language: currentLanguage,
           userId: user?.id,
           messageHistory: messageHistory
@@ -89,7 +138,8 @@ export const useChatbot = () => {
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === "Enter") {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
       handleSendMessage();
     }
   };
@@ -103,6 +153,8 @@ export const useChatbot = () => {
     isLoading,
     handleSendMessage,
     handleKeyDown,
+    handleAttachmentChange,
+    selectedAttachment,
     t
   };
 };
