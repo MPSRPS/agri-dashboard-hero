@@ -17,6 +17,10 @@ serve(async (req) => {
 
   try {
     const { message, language, userId, messageHistory } = await req.json();
+    
+    if (!message) {
+      throw new Error('Message is required');
+    }
 
     // Create system prompt customized for agricultural assistant
     const systemPrompt = `You are KrishiBot, an agricultural AI assistant specialized in helping farmers. 
@@ -66,6 +70,12 @@ serve(async (req) => {
     }
 
     const data = await response.json();
+    
+    if (!data.choices || !data.choices[0] || !data.choices[0].message) {
+      console.error('Invalid response format from OpenAI:', data);
+      throw new Error('Invalid response from OpenAI');
+    }
+    
     const botResponse = data.choices[0].message.content;
 
     // Save conversation to database if userId is provided
@@ -79,7 +89,10 @@ serve(async (req) => {
     });
   } catch (error) {
     console.error('Error in krishibot function:', error);
-    return new Response(JSON.stringify({ error: error.message }), {
+    return new Response(JSON.stringify({ 
+      error: error.message,
+      text: "I'm having trouble with my connection. Please try again in a moment."
+    }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
