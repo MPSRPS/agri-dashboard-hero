@@ -1,19 +1,18 @@
+
 import { useState, useEffect } from 'react';
 import DashboardLayout from '@/components/DashboardLayout';
 import DashboardHeader from '@/components/dashboard/DashboardHeader';
 import DashboardMetrics from '@/components/dashboard/DashboardMetrics';
 import WeatherWidgets from '@/components/dashboard/WeatherWidgets';
-import WeatherForecast from '@/components/dashboard/WeatherForecast';
-import CropHealth from '@/components/dashboard/CropHealth';
-import WaterConsumption from '@/components/dashboard/WaterConsumption';
-import FarmIncome from '@/components/dashboard/FarmIncome';
 import ChatInterface from '@/components/dashboard/ChatInterface';
 import { useAuth } from '@/context/AuthContext';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
-import { RefreshCw } from 'lucide-react';
+import { RefreshCw, Download } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
+import SoilAnalyzerCard from '@/components/dashboard/SoilAnalyzerCard';
+import CropPerformanceCard from '@/components/dashboard/CropPerformanceCard';
 
 const Dashboard = () => {
   const { user } = useAuth();
@@ -60,30 +59,39 @@ const Dashboard = () => {
       <div className="space-y-6">
         <div className="flex justify-between items-center">
           <DashboardHeader />
-          <Button 
-            variant="outline" 
-            size="sm"
-            onClick={handleResetDashboard}
-            className="text-gray-500"
-          >
-            <RefreshCw className="h-4 w-4 mr-2" /> Reset Dashboard
-          </Button>
+          <div className="flex gap-2">
+            <Button 
+              variant="outline" 
+              size="sm"
+              className="text-gray-500"
+            >
+              <Download className="h-4 w-4 mr-2" /> Export Data
+            </Button>
+            <Button 
+              variant="outline" 
+              size="sm"
+              onClick={handleResetDashboard}
+              className="text-gray-500"
+            >
+              <RefreshCw className="h-4 w-4 mr-2" /> Reset Dashboard
+            </Button>
+          </div>
         </div>
         
-        {/* User-specific content */}
+        <DashboardMetrics />
+        
+        {/* Main dashboard content */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Main Content */}
+          {/* Left Column */}
           <div className="lg:col-span-2 space-y-6">
             {hasBudgetPlans ? (
-              <>
-                <Card className="p-6 border-gray-200">
-                  <h2 className="text-xl font-bold mb-4">Your Budget Summary</h2>
-                  <p className="mb-4">You have created budget plans. View and manage them in the Budget Planning section.</p>
-                  <Button onClick={() => navigate('/budget-planning')} className="bg-krishi-600 hover:bg-krishi-700">
-                    View Budget Plans
-                  </Button>
-                </Card>
-              </>
+              <Card className="p-6 border-gray-200">
+                <h2 className="text-xl font-bold mb-4">Your Budget Summary</h2>
+                <p className="mb-4">You have created budget plans. View and manage them in the Budget Planning section.</p>
+                <Button onClick={() => navigate('/budget-planning')} className="bg-krishi-600 hover:bg-krishi-700">
+                  View Budget Plans
+                </Button>
+              </Card>
             ) : (
               <Card className="p-6 border-gray-200">
                 <h2 className="text-xl font-bold mb-4">Get Started with Budget Planning</h2>
@@ -94,7 +102,6 @@ const Dashboard = () => {
               </Card>
             )}
             
-            {/* Weather data - keep as it's useful context */}
             <WeatherWidgets temperatureData={[
               { name: '6AM', value: 22 },
               { name: '9AM', value: 24 },
@@ -103,6 +110,11 @@ const Dashboard = () => {
               { name: '6PM', value: 27 },
               { name: '9PM', value: 25 },
             ]} />
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <SoilAnalyzerCard />
+              <CropPerformanceCard />
+            </div>
           </div>
           
           {/* Right Column - Chatbot */}

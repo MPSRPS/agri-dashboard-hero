@@ -6,6 +6,7 @@ import { useChatbot } from "@/hooks/useChatbot";
 import ChatHeader from "./chat/ChatHeader";
 import ChatMessages from "./chat/ChatMessages";
 import ChatInput from "./chat/ChatInput";
+import ChatModelInfo from "./chat/ChatModelInfo";
 
 const Chatbot = () => {
   const {
@@ -18,6 +19,7 @@ const Chatbot = () => {
     handleSendMessage,
     handleKeyDown,
     handleAttachmentChange,
+    modelInfo,
     t
   } = useChatbot();
 
@@ -54,6 +56,11 @@ const Chatbot = () => {
             placeholder={t("ask_question")}
             disabled={isLoading}
             onAttachmentChange={handleAttachmentChange}
+          />
+          
+          <ChatModelInfo 
+            modelName={modelInfo.name} 
+            confidence={modelInfo.confidence} 
           />
         </div>
       ) : (

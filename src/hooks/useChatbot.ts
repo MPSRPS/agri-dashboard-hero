@@ -21,6 +21,10 @@ export const useChatbot = () => {
   const [isExpanded, setIsExpanded] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [selectedAttachment, setSelectedAttachment] = useState<File | null>(null);
+  const [modelInfo, setModelInfo] = useState({
+    name: "gpt-4o-mini",
+    confidence: 0.85,
+  });
 
   const handleAttachmentChange = (file: File | null) => {
     setSelectedAttachment(file);
@@ -41,10 +45,17 @@ export const useChatbot = () => {
     }
   };
 
+  const analyzeImage = async (file: File): Promise<string> => {
+    // Simplified image description for now
+    // This would normally call a vision API
+    return `uploaded image (${file.type}, ${Math.round(file.size/1024)}KB)`;
+  };
+
   const handleSendMessage = async (messageText: string) => {
     if ((!messageText.trim() && !selectedAttachment) || isLoading) return;
 
     let attachmentData = null;
+    let attachmentDescription = "";
     
     // Handle file upload if there's an attachment
     if (selectedAttachment) {
@@ -57,6 +68,11 @@ export const useChatbot = () => {
           url: fileUrl,
           name: selectedAttachment.name
         };
+        
+        // For images, get a description to send to the AI
+        if (isImage) {
+          attachmentDescription = await analyzeImage(selectedAttachment);
+        }
       } else {
         toast({
           title: "Upload Failed",
@@ -87,23 +103,27 @@ export const useChatbot = () => {
         sender: msg.sender
       }));
 
-      // Add information about the attachment if present
-      const messageWithAttachment = attachmentData 
-        ? `${messageText} [Attached: ${attachmentData.name}]` 
-        : messageText;
-
       // Call the KrishiBot edge function with message history
       const { data, error } = await supabase.functions.invoke("krishibot", {
         body: {
-          message: messageWithAttachment,
+          message: messageText,
           language: currentLanguage,
           userId: user?.id,
-          messageHistory: messageHistory
+          messageHistory: messageHistory,
+          attachmentInfo: attachmentDescription
         }
       });
 
       if (error) {
         throw error;
+      }
+
+      // Update model info if provided
+      if (data.model) {
+        setModelInfo({
+          name: data.model,
+          confidence: data.confidence || 0.85
+        });
       }
 
       // Add bot response
@@ -155,6 +175,7 @@ export const useChatbot = () => {
     handleKeyDown,
     handleAttachmentChange,
     selectedAttachment,
+    modelInfo,
     t,
     currentLanguage
   };
