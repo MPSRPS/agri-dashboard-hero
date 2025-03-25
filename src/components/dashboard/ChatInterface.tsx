@@ -3,10 +3,12 @@ import { useState, useEffect, useRef } from 'react';
 import { Send, Bot } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { useTranslation } from '@/hooks/useTranslation';
+import { useLanguage } from '@/context/LanguageContext';
 import { useAuth } from '@/context/AuthContext';
 import { toast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
+import { supabase } from '@/integrations/supabase/client';
 
 interface ChatMessage {
   id: string;
@@ -17,6 +19,7 @@ interface ChatMessage {
 
 const ChatInterface = () => {
   const { t } = useTranslation();
+  const { currentLanguage } = useLanguage();
   const { user } = useAuth();
   const [message, setMessage] = useState('');
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([
@@ -29,7 +32,6 @@ const ChatInterface = () => {
   ]);
   const [isLoading, setIsLoading] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const { currentLanguage } = useTranslation();
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -63,7 +65,7 @@ const ChatInterface = () => {
       }));
       
       // Call the KrishiBot edge function
-      const { data, error } = await window.supabase.functions.invoke("krishibot", {
+      const { data, error } = await supabase.functions.invoke("krishibot", {
         body: {
           message,
           language: currentLanguage,

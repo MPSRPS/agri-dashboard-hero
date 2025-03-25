@@ -7,6 +7,7 @@ import {
   WeatherData 
 } from '@/services/plantDiseaseService';
 import { toast } from "@/hooks/use-toast";
+import { supabase } from '@/integrations/supabase/client';
 
 export const usePlantDiseaseDetection = () => {
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
@@ -77,7 +78,7 @@ export const usePlantDiseaseDetection = () => {
       }
       
       // Call the analyze-plant-disease function directly
-      const { data, error } = await window.supabase.functions.invoke("analyze-plant-disease", {
+      const { data, error } = await supabase.functions.invoke("analyze-plant-disease", {
         body: {
           imageUrl: selectedImage || "dummy-url",
           userId: user?.id,
