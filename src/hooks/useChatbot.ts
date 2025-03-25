@@ -41,8 +41,8 @@ export const useChatbot = () => {
     }
   };
 
-  const handleSendMessage = async () => {
-    if ((!input.trim() && !selectedAttachment) || isLoading) return;
+  const handleSendMessage = async (messageText: string) => {
+    if ((!messageText.trim() && !selectedAttachment) || isLoading) return;
 
     let attachmentData = null;
     
@@ -69,7 +69,7 @@ export const useChatbot = () => {
     // Add user message
     const userMessage: Message = {
       id: Date.now().toString(),
-      text: input,
+      text: messageText,
       sender: "user",
       timestamp: new Date(),
       attachment: attachmentData
@@ -89,8 +89,8 @@ export const useChatbot = () => {
 
       // Add information about the attachment if present
       const messageWithAttachment = attachmentData 
-        ? `${input} [Attached: ${attachmentData.name}]` 
-        : input;
+        ? `${messageText} [Attached: ${attachmentData.name}]` 
+        : messageText;
 
       // Call the KrishiBot edge function with message history
       const { data, error } = await supabase.functions.invoke("krishibot", {
@@ -140,7 +140,7 @@ export const useChatbot = () => {
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
-      handleSendMessage();
+      handleSendMessage(input);
     }
   };
 
@@ -155,6 +155,7 @@ export const useChatbot = () => {
     handleKeyDown,
     handleAttachmentChange,
     selectedAttachment,
-    t
+    t,
+    currentLanguage
   };
 };

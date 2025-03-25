@@ -4,7 +4,7 @@ import { Bot } from "lucide-react";
 
 interface ChatHeaderProps {
   title: string;
-  onClose: (e: React.MouseEvent) => void;
+  onClose?: (e: React.MouseEvent) => void;
 }
 
 const ChatHeader = ({ title, onClose }: ChatHeaderProps) => {
@@ -14,14 +14,16 @@ const ChatHeader = ({ title, onClose }: ChatHeaderProps) => {
         <Bot size={18} />
         <h3 className="text-sm font-medium">{title}</h3>
       </div>
-      <Button 
-        variant="ghost" 
-        size="sm" 
-        className="text-white hover:bg-krishi-600 p-1 h-6 w-6"
-        onClick={onClose}
-      >
-        ✕
-      </Button>
+      {onClose && (
+        <Button 
+          variant="ghost" 
+          size="sm" 
+          className="text-white hover:bg-krishi-600 p-1 h-6 w-6"
+          onClick={onClose}
+        >
+          ✕
+        </Button>
+      )}
     </div>
   );
 };

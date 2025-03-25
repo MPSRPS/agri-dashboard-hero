@@ -19,7 +19,7 @@ interface ChatMessagesProps {
   isLoading: boolean;
 }
 
-const ChatMessages = ({ messages, isLoading }: ChatMessagesProps) => {
+const ChatMessages = ({ messages, isLoading = false }: ChatMessagesProps) => {
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {

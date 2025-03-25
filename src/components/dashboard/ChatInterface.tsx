@@ -1,3 +1,4 @@
+
 import React, { useState, useRef, useEffect } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -9,13 +10,13 @@ import { useChatbot } from '@/hooks/useChatbot';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useAuth } from '@/context/AuthContext';
 import { toast } from '@/hooks/use-toast';
-import { supabaseClient } from '@/integrations/supabase/client';
+import { supabase } from '@/integrations/supabase/client';
 
 const ChatInterface = () => {
   const [inputMessage, setInputMessage] = useState('');
   
-  const { messages, sendMessage, isLoading } = useChatbot();
-  const { t, currentLanguage } = useTranslation();
+  const { messages, isLoading, handleSendMessage: sendChatMessage } = useChatbot();
+  const { t } = useTranslation();
   const { user } = useAuth();
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -25,7 +26,7 @@ const ChatInterface = () => {
     if (!inputMessage.trim()) return;
     
     try {
-      await sendMessage(inputMessage);
+      await sendChatMessage(inputMessage);
       setInputMessage('');
     } catch (error) {
       console.error('Error sending message:', error);
@@ -42,12 +43,17 @@ const ChatInterface = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
+  const handleCloseChat = (e: React.MouseEvent) => {
+    // Close chat functionality can be implemented here if needed
+    console.log("Chat closed");
+  };
+
   return (
     <Card className="flex flex-col h-full border-gray-200">
-      <ChatHeader title="KrishiBot Assistant" />
+      <ChatHeader title="KrishiBot Assistant" onClose={handleCloseChat} />
       
       <div className="flex-1 overflow-y-auto p-4">
-        <ChatMessages messages={messages} />
+        <ChatMessages messages={messages} isLoading={isLoading} />
         <div ref={messagesEndRef} />
       </div>
       
