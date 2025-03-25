@@ -3,52 +3,83 @@ import { useState } from 'react';
 import DashboardLayout from '@/components/DashboardLayout';
 import { useTranslation } from '@/hooks/useTranslation';
 import { Card } from '@/components/ui/card';
+import { toast } from '@/hooks/use-toast';
 import { Leaf, ArrowRight, FileText, Droplets, ThermometerSnowflake, Ruler, CloudRain } from 'lucide-react';
+import { getCropRecommendation, SoilData, CropInfo, AIMetrics, CropRecommendationResponse } from '@/services/cropRecommendationService';
+import { AIMetricsCard, MarketTrends, WeatherForecastCard } from '@/components/dashboard';
 
 const CropRecommendation = () => {
   const { t } = useTranslation();
-  const [formData, setFormData] = useState({
-    nitrogen: '',
-    phosphorus: '',
-    potassium: '',
-    temperature: '',
-    humidity: '',
-    ph: '',
-    rainfall: ''
+  const [formData, setFormData] = useState<SoilData>({
+    nitrogen: 0,
+    phosphorus: 0,
+    potassium: 0,
+    temperature: 0,
+    humidity: 0,
+    ph: 0,
+    rainfall: 0
   });
   const [loading, setLoading] = useState(false);
-  const [recommendation, setRecommendation] = useState<string | null>(null);
+  const [recommendation, setRecommendation] = useState<CropInfo | null>(null);
+  const [aiMetrics, setAIMetrics] = useState<AIMetrics | null>(null);
+  const [region, setRegion] = useState("default");
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
+    setFormData(prev => ({ ...prev, [name]: parseFloat(value) || 0 }));
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     
-    // Simulate API call
-    setTimeout(() => {
-      // This would normally be the result from your backend ML model
-      const crops = ['rice', 'wheat', 'maize', 'chickpea', 'kidney beans', 'mung bean', 'black gram', 'pomegranate', 'banana', 'mango', 'grapes', 'watermelon', 'muskmelon', 'papaya', 'orange', 'coconut'];
-      const randomCrop = crops[Math.floor(Math.random() * crops.length)];
-      setRecommendation(randomCrop);
+    try {
+      // Convert string values to numbers
+      const numericFormData: SoilData = {
+        nitrogen: parseFloat(formData.nitrogen as unknown as string) || 0,
+        phosphorus: parseFloat(formData.phosphorus as unknown as string) || 0,
+        potassium: parseFloat(formData.potassium as unknown as string) || 0,
+        temperature: parseFloat(formData.temperature as unknown as string) || 0,
+        humidity: parseFloat(formData.humidity as unknown as string) || 0,
+        ph: parseFloat(formData.ph as unknown as string) || 0,
+        rainfall: parseFloat(formData.rainfall as unknown as string) || 0
+      };
+      
+      const response = await getCropRecommendation(numericFormData, region);
+      setRecommendation(response.crop);
+      
+      if (response.aiMetrics) {
+        setAIMetrics(response.aiMetrics);
+      }
+      
+      toast({
+        title: "Analysis Complete",
+        description: `The AI recommends ${response.crop.name} for your soil and climate conditions.`,
+      });
+    } catch (error) {
+      console.error("Error getting recommendation:", error);
+      toast({
+        title: "Analysis Failed",
+        description: "There was an error analyzing your data. Please try again.",
+        variant: "destructive"
+      });
+    } finally {
       setLoading(false);
-    }, 2000);
+    }
   };
 
   const resetForm = () => {
     setFormData({
-      nitrogen: '',
-      phosphorus: '',
-      potassium: '',
-      temperature: '',
-      humidity: '',
-      ph: '',
-      rainfall: ''
+      nitrogen: 0,
+      phosphorus: 0,
+      potassium: 0,
+      temperature: 0,
+      humidity: 0,
+      ph: 0,
+      rainfall: 0
     });
     setRecommendation(null);
+    setAIMetrics(null);
   };
 
   // Presets for demo purposes
@@ -57,73 +88,42 @@ const CropRecommendation = () => {
       name: 'Sandy Soil',
       icon: <Leaf className="h-5 w-5" />,
       values: {
-        nitrogen: '40',
-        phosphorus: '35',
-        potassium: '30',
-        temperature: '25',
-        humidity: '60',
-        ph: '6.5',
-        rainfall: '150'
+        nitrogen: 40,
+        phosphorus: 35,
+        potassium: 30,
+        temperature: 25,
+        humidity: 60,
+        ph: 6.5,
+        rainfall: 150
       }
     },
     {
       name: 'Clay Soil',
       icon: <Droplets className="h-5 w-5" />,
       values: {
-        nitrogen: '80',
-        phosphorus: '60',
-        potassium: '50',
-        temperature: '28',
-        humidity: '70',
-        ph: '7.2',
-        rainfall: '200'
+        nitrogen: 80,
+        phosphorus: 60,
+        potassium: 50,
+        temperature: 28,
+        humidity: 70,
+        ph: 7.2,
+        rainfall: 200
       }
     },
     {
       name: 'Loamy Soil',
       icon: <FileText className="h-5 w-5" />,
       values: {
-        nitrogen: '60',
-        phosphorus: '50',
-        potassium: '45',
-        temperature: '27',
-        humidity: '65',
-        ph: '6.8',
-        rainfall: '175'
+        nitrogen: 60,
+        phosphorus: 50,
+        potassium: 45,
+        temperature: 27,
+        humidity: 65,
+        ph: 6.8,
+        rainfall: 175
       }
     }
   ];
-
-  const cropInformation: Record<string, any> = {
-    rice: {
-      description: 'Rice is a staple food crop in many parts of the world. It thrives in warm and humid conditions with plenty of water.',
-      season: 'Kharif season (Monsoon)',
-      waterNeeds: 'High',
-      growthPeriod: '3-6 months',
-      yield: '3-5 tons per hectare'
-    },
-    wheat: {
-      description: 'Wheat is a cereal grain that is a worldwide staple food. It grows best in moderate temperatures.',
-      season: 'Rabi season (Winter)',
-      waterNeeds: 'Medium',
-      growthPeriod: '4-5 months',
-      yield: '2.5-3.5 tons per hectare'
-    },
-    maize: {
-      description: 'Maize (corn) is a versatile crop used for food, feed, and biofuel. It requires warm conditions and moderate rainfall.',
-      season: 'Kharif and Rabi seasons',
-      waterNeeds: 'Medium',
-      growthPeriod: '3-4 months',
-      yield: '4-6 tons per hectare'
-    },
-    mango: {
-      description: 'Mango is a tropical fruit known as the "King of Fruits". It grows best in tropical and subtropical regions.',
-      season: 'Perennial, fruiting in summer',
-      waterNeeds: 'Medium',
-      growthPeriod: 'Trees take 5-8 years to fruit',
-      yield: '10-15 tons per hectare (mature trees)'
-    }
-  };
 
   return (
     <DashboardLayout>
@@ -131,7 +131,7 @@ const CropRecommendation = () => {
         <div>
           <h1 className="text-2xl font-bold text-gray-800 dark:text-gray-100">{t('cropRecommendation')}</h1>
           <p className="text-gray-500 dark:text-gray-400">
-            Get personalized crop recommendations based on soil composition and environmental factors.
+            Get AI-powered crop recommendations based on soil composition and environmental factors.
           </p>
         </div>
         
@@ -281,7 +281,7 @@ const CropRecommendation = () => {
                     />
                   </div>
                 </div>
-                
+
                 <div className="flex gap-4">
                   <button
                     type="submit"
@@ -291,11 +291,11 @@ const CropRecommendation = () => {
                     {loading ? (
                       <div className="flex items-center gap-2">
                         <div className="h-4 w-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                        <span>Analyzing...</span>
+                        <span>Analyzing with AI...</span>
                       </div>
                     ) : (
                       <div className="flex items-center gap-2">
-                        <span>Get Recommendation</span>
+                        <span>Get AI Recommendation</span>
                         <ArrowRight className="h-4 w-4" />
                       </div>
                     )}
@@ -322,57 +322,67 @@ const CropRecommendation = () => {
                 <div className="space-y-6">
                   <div className="bg-krishi-50 p-4 rounded-lg border border-krishi-100">
                     <h3 className="text-lg font-medium text-krishi-800 capitalize mb-2">
-                      Recommended Crop: {recommendation}
+                      Recommended Crop: {recommendation.name}
                     </h3>
-                    {cropInformation[recommendation] ? (
-                      <p className="text-gray-600">
-                        {cropInformation[recommendation].description}
-                      </p>
-                    ) : (
-                      <p className="text-gray-600">
-                        This crop is well-suited for your soil composition and environmental conditions.
-                      </p>
-                    )}
+                    <p className="text-gray-600">
+                      {recommendation.description}
+                    </p>
                   </div>
                   
-                  {cropInformation[recommendation] && (
-                    <div className="space-y-4">
-                      <h3 className="text-md font-medium text-gray-800">Crop Information</h3>
-                      
-                      <div className="grid grid-cols-2 gap-4">
-                        <div className="bg-gray-50 p-3 rounded-lg border border-gray-200">
-                          <span className="text-xs text-gray-500 block">Season</span>
-                          <span className="font-medium text-gray-800">{cropInformation[recommendation].season}</span>
-                        </div>
-                        
-                        <div className="bg-gray-50 p-3 rounded-lg border border-gray-200">
-                          <span className="text-xs text-gray-500 block">Water Needs</span>
-                          <span className="font-medium text-gray-800">{cropInformation[recommendation].waterNeeds}</span>
-                        </div>
-                        
-                        <div className="bg-gray-50 p-3 rounded-lg border border-gray-200">
-                          <span className="text-xs text-gray-500 block">Growth Period</span>
-                          <span className="font-medium text-gray-800">{cropInformation[recommendation].growthPeriod}</span>
-                        </div>
-                        
-                        <div className="bg-gray-50 p-3 rounded-lg border border-gray-200">
-                          <span className="text-xs text-gray-500 block">Expected Yield</span>
-                          <span className="font-medium text-gray-800">{cropInformation[recommendation].yield}</span>
-                        </div>
+                  <div className="space-y-4">
+                    <h3 className="text-md font-medium text-gray-800">Crop Information</h3>
+                    
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="bg-gray-50 p-3 rounded-lg border border-gray-200">
+                        <span className="text-xs text-gray-500 block">Season</span>
+                        <span className="font-medium text-gray-800">{recommendation.season}</span>
                       </div>
                       
-                      <div className="bg-blue-50 p-4 rounded-lg border border-blue-100">
-                        <h4 className="text-sm font-medium text-blue-800 mb-2">Tips for Cultivation</h4>
-                        <ul className="text-sm text-gray-600 space-y-1 list-disc pl-4">
-                          <li>Ensure proper field preparation before sowing</li>
-                          <li>Monitor soil moisture regularly</li>
-                          <li>Apply fertilizers according to recommended dosage</li>
-                          <li>Implement integrated pest management practices</li>
-                          <li>Harvest at optimal maturity for best quality</li>
-                        </ul>
+                      <div className="bg-gray-50 p-3 rounded-lg border border-gray-200">
+                        <span className="text-xs text-gray-500 block">Water Needs</span>
+                        <span className="font-medium text-gray-800">{recommendation.waterNeeds}</span>
+                      </div>
+                      
+                      <div className="bg-gray-50 p-3 rounded-lg border border-gray-200">
+                        <span className="text-xs text-gray-500 block">Growth Period</span>
+                        <span className="font-medium text-gray-800">{recommendation.growthPeriod}</span>
+                      </div>
+                      
+                      <div className="bg-gray-50 p-3 rounded-lg border border-gray-200">
+                        <span className="text-xs text-gray-500 block">Expected Yield</span>
+                        <span className="font-medium text-gray-800">{recommendation.yield}</span>
                       </div>
                     </div>
-                  )}
+                    
+                    {/* AI Metrics Display */}
+                    {aiMetrics && <AIMetricsCard metrics={aiMetrics} />}
+                    
+                    {/* Market Trends */}
+                    {recommendation.marketPrice && recommendation.marketTrend && (
+                      <MarketTrends 
+                        mainCrop={{
+                          name: recommendation.name,
+                          marketPrice: recommendation.marketPrice,
+                          marketTrend: recommendation.marketTrend
+                        }}
+                        alternativeCrops={recommendation.alternativeCrops}
+                      />
+                    )}
+                    
+                    {/* Weather Forecast */}
+                    {recommendation.weatherForecast && (
+                      <WeatherForecastCard forecast={recommendation.weatherForecast} />
+                    )}
+                    
+                    <div className="bg-blue-50 p-4 rounded-lg border border-blue-100">
+                      <h4 className="text-sm font-medium text-blue-800 mb-2">Tips for Cultivation</h4>
+                      <ul className="text-sm text-gray-600 space-y-1 list-disc pl-4">
+                        {recommendation.tips.map((tip, index) => (
+                          <li key={index}>{tip}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  </div>
                 </div>
               ) : (
                 <div className="h-full flex flex-col items-center justify-center text-center p-4">
@@ -381,7 +391,7 @@ const CropRecommendation = () => {
                   </div>
                   <h3 className="text-lg font-medium text-gray-700">No Recommendation Yet</h3>
                   <p className="text-gray-500 mt-2">
-                    Enter your soil and environmental data on the left to get a personalized crop recommendation.
+                    Enter your soil and environmental data on the left to get an AI-powered crop recommendation.
                   </p>
                 </div>
               )}

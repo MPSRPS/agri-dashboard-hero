@@ -7,6 +7,179 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+// AI recommendation engine - simulates a trained ensemble model behavior
+// with weighted feature importance similar to XGBoost output
+function aiRecommendationEngine(soilData) {
+  // Feature importance weights derived from "model training"
+  const weights = {
+    nitrogen: 0.23,
+    phosphorus: 0.18,
+    potassium: 0.17,
+    temperature: 0.15,
+    humidity: 0.09,
+    ph: 0.08,
+    rainfall: 0.10
+  };
+  
+  // Normalized crop suitability scores based on soil/climate parameters
+  // These would be derived from a model trained on agricultural datasets
+  const cropScores = {
+    rice: computeCropScore({
+      baseline: 0.72,
+      nitrogen: [50, 100], // [min, max] optimal ranges
+      phosphorus: [30, 60],
+      potassium: [20, 40],
+      temperature: [22, 32],
+      humidity: [60, 90],
+      ph: [5.0, 6.5],
+      rainfall: [200, 300]
+    }, soilData, weights),
+    
+    wheat: computeCropScore({
+      baseline: 0.68,
+      nitrogen: [30, 70],
+      phosphorus: [20, 40],
+      potassium: [15, 35],
+      temperature: [15, 24],
+      humidity: [50, 70],
+      ph: [5.5, 7.0],
+      rainfall: [100, 200]
+    }, soilData, weights),
+    
+    chickpea: computeCropScore({
+      baseline: 0.64,
+      nitrogen: [20, 40],
+      phosphorus: [40, 70],
+      potassium: [20, 40],
+      temperature: [18, 30],
+      humidity: [40, 60],
+      ph: [6.0, 8.0],
+      rainfall: [80, 150]
+    }, soilData, weights),
+    
+    mango: computeCropScore({
+      baseline: 0.58,
+      nitrogen: [30, 60],
+      phosphorus: [20, 40],
+      potassium: [40, 80],
+      temperature: [24, 35],
+      humidity: [50, 75],
+      ph: [5.5, 7.5],
+      rainfall: [150, 250]
+    }, soilData, weights),
+    
+    banana: computeCropScore({
+      baseline: 0.62,
+      nitrogen: [40, 80],
+      phosphorus: [30, 60],
+      potassium: [40, 90],
+      temperature: [24, 36],
+      humidity: [60, 90],
+      ph: [5.5, 7.0],
+      rainfall: [200, 350]
+    }, soilData, weights)
+  };
+  
+  // Find crop with highest suitability score
+  let bestCrop = "wheat"; // Default
+  let highestScore = 0;
+  
+  for (const [crop, score] of Object.entries(cropScores)) {
+    console.log(`Crop: ${crop}, Score: ${score}`);
+    if (score > highestScore) {
+      highestScore = score;
+      bestCrop = crop;
+    }
+  }
+  
+  console.log(`Selected crop: ${bestCrop} with score: ${highestScore}`);
+  
+  // Add confidence level based on how decisive the recommendation is
+  const secondBestScore = Math.max(...Object.entries(cropScores)
+    .filter(([crop]) => crop !== bestCrop)
+    .map(([_, score]) => score));
+  
+  const confidenceLevel = Math.min(100, Math.round((highestScore - secondBestScore) / highestScore * 100) + 60);
+  
+  return { 
+    recommendedCrop: bestCrop, 
+    confidenceScore: confidenceLevel,
+    alternativeCrops: Object.entries(cropScores)
+      .filter(([crop]) => crop !== bestCrop)
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 2)
+      .map(([crop, score]) => ({ crop, score: Math.round(score * 100) }))
+  };
+}
+
+// Helper function to compute crop suitability score based on parameters
+function computeCropScore(cropParams, soilData, weights) {
+  let score = cropParams.baseline;
+  
+  // Evaluate each parameter and adjust score
+  for (const [param, weight] of Object.entries(weights)) {
+    if (param in soilData && param in cropParams) {
+      const [min, max] = cropParams[param];
+      const value = soilData[param];
+      
+      // Parameter is within optimal range - full points
+      if (value >= min && value <= max) {
+        score += weight * 0.3;
+      } 
+      // Parameter is close to optimal range - partial points
+      else if (value >= min * 0.7 && value <= max * 1.3) {
+        score += weight * 0.15;
+      }
+      // Parameter is far from optimal - negative points
+      else {
+        score -= weight * 0.1;
+      }
+    }
+  }
+  
+  // Apply environmental adjustments (simulating seasonal effects)
+  if (soilData.temperature > 30 && soilData.humidity > 80) {
+    // Hot and humid conditions
+    if (cropParams.baseline > 0.65) { // If crop typically likes heat
+      score += 0.05;
+    } else {
+      score -= 0.05;
+    }
+  }
+  
+  return Math.max(0, Math.min(1, score)); // Ensure score is between 0 and 1
+}
+
+// Simulate fetching weather forecast data
+// In a real implementation, this would call OpenWeatherMap or similar API
+async function getWeatherForecast(region = "default") {
+  // Simulated 7-day forecast with rainfall predictions
+  return {
+    forecast: [
+      { day: 1, temperature: 25, humidity: 65, rainfall: 0 },
+      { day: 2, temperature: 26, humidity: 70, rainfall: 10 },
+      { day: 3, temperature: 24, humidity: 75, rainfall: 20 },
+      { day: 4, temperature: 23, humidity: 80, rainfall: 5 },
+      { day: 5, temperature: 25, humidity: 60, rainfall: 0 },
+      { day: 6, temperature: 26, humidity: 65, rainfall: 0 },
+      { day: 7, temperature: 28, humidity: 60, rainfall: 0 },
+    ],
+    totalExpectedRainfall: 35
+  };
+}
+
+// Simulate fetching market price data
+// In a real implementation, this would call an agricultural commodity API
+async function getMarketPrices() {
+  return {
+    rice: { trend: "stable", pricePerKg: 25 },
+    wheat: { trend: "rising", pricePerKg: 30 },
+    chickpea: { trend: "rising", pricePerKg: 45 },
+    mango: { trend: "falling", pricePerKg: 60 },
+    banana: { trend: "stable", pricePerKg: 35 }
+  };
+}
+
 serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
@@ -14,43 +187,51 @@ serve(async (req) => {
   }
 
   try {
-    const { soilData } = await req.json();
+    const { soilData, region } = await req.json();
     
     if (!soilData) {
       throw new Error('Soil data is required');
     }
 
-    // In a real-world scenario, we would call a machine learning model
-    // or a specialized agricultural API here.
-    // For now, we'll use a simplified rule-based approach
-
-    let recommendedCrop = "wheat"; // Default crop
+    console.log('Received soil data:', JSON.stringify(soilData));
     
-    // High nitrogen and adequate rainfall favors leafy crops
-    if (soilData.nitrogen > 70 && soilData.rainfall > 200) {
-      recommendedCrop = "rice";
-    } 
-    // Balanced NPK and moderate rainfall is good for cereals
-    else if (soilData.nitrogen > 40 && soilData.phosphorus > 30 && soilData.potassium > 30 && soilData.rainfall < 200) {
-      recommendedCrop = "wheat";
-    }
-    // Low water, high phosphorus is good for pulses
-    else if (soilData.phosphorus > 60 && soilData.rainfall < 150) {
-      recommendedCrop = "chickpea";
-    }
-    // High potassium with warm temps is good for fruits
-    else if (soilData.potassium > 50 && soilData.temperature > 28) {
-      recommendedCrop = "mango";
-    }
-    // High rainfall and temperature for tropical fruits
-    else if (soilData.temperature > 30 && soilData.rainfall > 250) {
-      recommendedCrop = "banana";
-    }
+    // Get AI-based crop recommendation
+    const aiResult = aiRecommendationEngine(soilData);
+    console.log('AI recommendation:', JSON.stringify(aiResult));
+    
+    // Get extended forecast data
+    const weatherForecast = await getWeatherForecast(region);
+    console.log('Weather forecast:', JSON.stringify(weatherForecast));
+    
+    // Get market price information
+    const marketPrices = await getMarketPrices();
+    console.log('Market prices:', JSON.stringify(marketPrices));
     
     // Get the detailed crop information
-    const cropInfo = getCropInformation(recommendedCrop);
+    const cropInfo = getCropInformation(aiResult.recommendedCrop);
+    
+    // Enhance crop info with market and weather data
+    cropInfo.marketTrend = marketPrices[aiResult.recommendedCrop].trend;
+    cropInfo.marketPrice = marketPrices[aiResult.recommendedCrop].pricePerKg;
+    cropInfo.weatherForecast = weatherForecast;
+    cropInfo.confidenceScore = aiResult.confidenceScore;
+    cropInfo.alternativeCrops = aiResult.alternativeCrops.map(alt => {
+      return {
+        name: getCropInformation(alt.crop).name,
+        score: alt.score,
+        marketPrice: marketPrices[alt.crop].pricePerKg,
+        marketTrend: marketPrices[alt.crop].trend
+      };
+    });
 
-    return new Response(JSON.stringify({ crop: cropInfo }), {
+    return new Response(JSON.stringify({ 
+      crop: cropInfo,
+      aiMetrics: {
+        confidenceScore: aiResult.confidenceScore,
+        dataPoints: Object.keys(soilData).length,
+        modelVersion: "1.0.3" // Simulated version tracking
+      }
+    }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
   } catch (error) {

@@ -11,6 +11,23 @@ export interface SoilData {
   rainfall: number;
 }
 
+export interface WeatherForecast {
+  forecast: Array<{
+    day: number;
+    temperature: number;
+    humidity: number;
+    rainfall: number;
+  }>;
+  totalExpectedRainfall: number;
+}
+
+export interface AlternativeCrop {
+  name: string;
+  score: number;
+  marketPrice: number;
+  marketTrend: string;
+}
+
 export interface CropInfo {
   name: string;
   description: string;
@@ -19,13 +36,29 @@ export interface CropInfo {
   growthPeriod: string;
   yield: string;
   tips: string[];
+  marketTrend?: string;
+  marketPrice?: number;
+  weatherForecast?: WeatherForecast;
+  confidenceScore?: number;
+  alternativeCrops?: AlternativeCrop[];
 }
 
-export async function getCropRecommendation(soilData: SoilData): Promise<CropInfo> {
+export interface AIMetrics {
+  confidenceScore: number;
+  dataPoints: number;
+  modelVersion: string;
+}
+
+export interface CropRecommendationResponse {
+  crop: CropInfo;
+  aiMetrics?: AIMetrics;
+}
+
+export async function getCropRecommendation(soilData: SoilData, region?: string): Promise<CropRecommendationResponse> {
   try {
     // Call the crop recommendation API through our Supabase Edge Function
     const { data, error } = await supabase.functions.invoke("crop-recommendation", {
-      body: { soilData }
+      body: { soilData, region }
     });
     
     if (error) {
@@ -33,7 +66,7 @@ export async function getCropRecommendation(soilData: SoilData): Promise<CropInf
     }
     
     if (data && data.crop) {
-      return data.crop;
+      return data as CropRecommendationResponse;
     }
     
     throw new Error("Invalid crop recommendation data received");
@@ -41,7 +74,9 @@ export async function getCropRecommendation(soilData: SoilData): Promise<CropInf
     console.error("Error fetching crop recommendation:", error);
     
     // Return fallback crop recommendation
-    return getFallbackCropRecommendation(soilData);
+    return {
+      crop: getFallbackCropRecommendation(soilData)
+    };
   }
 }
 
