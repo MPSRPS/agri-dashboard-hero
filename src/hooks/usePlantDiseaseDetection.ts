@@ -2,11 +2,11 @@
 import { useState } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { 
-  uploadPlantImage, 
   analyzePlantDisease, 
   PredictionResult,
   WeatherData 
 } from '@/services/plantDiseaseService';
+import { toast } from "@/hooks/use-toast";
 
 export const usePlantDiseaseDetection = () => {
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
@@ -67,32 +67,30 @@ export const usePlantDiseaseDetection = () => {
     setLoading(true);
     
     try {
-      // Convert data URL to file object if it's a data URL
-      let imageUrl = selectedImage;
-      
-      // If the image is a data URL (from FileReader), upload it to Supabase storage
-      if (selectedImage.startsWith('data:')) {
-        const file = await dataURLtoFile(selectedImage, 'plant_image.jpg');
-        const uploadedUrl = await uploadPlantImage(file, user?.id);
-        
-        if (!uploadedUrl) {
-          throw new Error('Failed to upload image');
-        }
-        
-        imageUrl = uploadedUrl;
-      }
-      
+      // For demo purposes, we'll simulate sending the image to the backend
+      // In a real app, we would upload the image to storage first
+
       // If we don't have weather data yet, try to get it
       if (!weatherData) {
         const data = await detectWeatherData();
         if (data) setWeatherData(data);
       }
       
-      // Analyze the plant disease with weather data for enhanced accuracy
-      const result = await analyzePlantDisease(imageUrl, user?.id, weatherData || undefined);
+      // Call the analyze-plant-disease function directly
+      const { data, error } = await window.supabase.functions.invoke("analyze-plant-disease", {
+        body: {
+          imageUrl: selectedImage || "dummy-url",
+          userId: user?.id,
+          weatherData: weatherData || undefined
+        }
+      });
       
-      if (result) {
-        setPrediction(result);
+      if (error) {
+        throw error;
+      }
+      
+      if (data) {
+        setPrediction(data);
       }
     } catch (error) {
       console.error('Error analyzing image:', error);
@@ -104,28 +102,6 @@ export const usePlantDiseaseDetection = () => {
     } finally {
       setLoading(false);
     }
-  };
-
-  // Helper function to convert data URL to File object
-  const dataURLtoFile = (dataUrl: string, filename: string): Promise<File> => {
-    return new Promise((resolve, reject) => {
-      const arr = dataUrl.split(',');
-      if (arr.length < 2) {
-        reject(new Error('Invalid data URL'));
-        return;
-      }
-      
-      const mime = arr[0].match(/:(.*?);/)?.[1];
-      const bstr = atob(arr[1]);
-      let n = bstr.length;
-      const u8arr = new Uint8Array(n);
-      
-      while (n--) {
-        u8arr[n] = bstr.charCodeAt(n);
-      }
-      
-      resolve(new File([u8arr], filename, { type: mime }));
-    });
   };
 
   return {
@@ -141,6 +117,3 @@ export const usePlantDiseaseDetection = () => {
     analyzeImage
   };
 };
-
-// Helper imports that were missing from the original implementation
-import { toast } from "@/hooks/use-toast";

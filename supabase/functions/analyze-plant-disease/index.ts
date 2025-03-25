@@ -37,7 +37,9 @@ serve(async (req) => {
     const supabase = createClient(supabaseUrl, supabaseKey)
 
     // Parse the request body
-    const { imageUrl, userId } = await req.json()
+    const { imageUrl, userId, weatherData } = await req.json()
+
+    console.log("Received request:", { imageUrl, userId, weatherData });
 
     if (!imageUrl) {
       return new Response(
@@ -58,6 +60,7 @@ serve(async (req) => {
       .select('*')
     
     if (diseasesError) {
+      console.error("Error fetching diseases:", diseasesError);
       throw diseasesError
     }
     
@@ -77,6 +80,7 @@ serve(async (req) => {
       .single()
     
     if (mainDiseaseError) {
+      console.error("Error fetching main disease:", mainDiseaseError);
       throw mainDiseaseError
     }
     
@@ -87,6 +91,7 @@ serve(async (req) => {
       .eq('disease_id', mainDiseaseId)
     
     if (symptomsError) {
+      console.error("Error fetching symptoms:", symptomsError);
       throw symptomsError
     }
     
@@ -97,6 +102,7 @@ serve(async (req) => {
       .eq('disease_id', mainDiseaseId)
     
     if (treatmentsError) {
+      console.error("Error fetching treatments:", treatmentsError);
       throw treatmentsError
     }
     
@@ -107,6 +113,7 @@ serve(async (req) => {
       .eq('disease_id', mainDiseaseId)
     
     if (measuresError) {
+      console.error("Error fetching preventive measures:", measuresError);
       throw measuresError
     }
     
@@ -117,6 +124,7 @@ serve(async (req) => {
       .eq('disease_id', mainDiseaseId)
     
     if (factorsError) {
+      console.error("Error fetching environmental factors:", factorsError);
       throw factorsError
     }
     
@@ -146,17 +154,21 @@ serve(async (req) => {
     
     // Save analysis to history if userId is provided
     if (userId) {
-      await supabase.from('plant_analysis_history').insert({
+      const { error: insertError } = await supabase.from('plant_analysis_history').insert({
         user_id: userId,
         image_path: imageUrl,
         main_disease_id: mainDiseaseId,
         confidence: mainDiseaseConfidence
       })
+      
+      if (insertError) {
+        console.error("Error saving analysis to history:", insertError);
+      }
     }
     
     const result: PredictionResult = {
       mainDisease,
-      diseases: [mainDisease, ...otherDiseases]
+      diseases: [mainDisease, ...otherDiseases.slice(0, 4)] // Limit to 5 total diseases
     }
     
     return new Response(
@@ -167,8 +179,21 @@ serve(async (req) => {
     console.error('Error in analyze-plant-disease function:', error)
     
     return new Response(
-      JSON.stringify({ error: error.message || 'An unexpected error occurred' }),
-      { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }
+      JSON.stringify({ 
+        error: error.message || 'An unexpected error occurred',
+        mainDisease: {
+          id: "fallback",
+          name: "Analysis Failed",
+          description: "We couldn't analyze the image. Please try again with a clearer image.",
+          confidence: 0,
+          symptoms: ["Unable to process image"],
+          treatments: ["Try uploading a different image with better lighting"],
+          preventive_measures: ["Ensure good lighting when taking photos", "Focus clearly on the affected area"],
+          environmental_factors: []
+        },
+        diseases: []
+      }),
+      { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 } // Changed to 200
     )
   }
 })

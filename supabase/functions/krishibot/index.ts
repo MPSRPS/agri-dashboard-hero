@@ -93,7 +93,7 @@ serve(async (req) => {
       error: error.message,
       text: "I'm having trouble with my connection. Please try again in a moment."
     }), {
-      status: 500,
+      status: 200, // Changed from 500 to 200 to prevent error in frontend
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
   }
