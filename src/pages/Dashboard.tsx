@@ -1,5 +1,4 @@
-
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import DashboardLayout from '@/components/DashboardLayout';
 import DashboardHeader from '@/components/dashboard/DashboardHeader';
 import DashboardMetrics from '@/components/dashboard/DashboardMetrics';
@@ -9,74 +8,101 @@ import CropHealth from '@/components/dashboard/CropHealth';
 import WaterConsumption from '@/components/dashboard/WaterConsumption';
 import FarmIncome from '@/components/dashboard/FarmIncome';
 import ChatInterface from '@/components/dashboard/ChatInterface';
+import { useAuth } from '@/context/AuthContext';
+import { Card } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { useNavigate } from 'react-router-dom';
+import { RefreshCw } from 'lucide-react';
+import { toast } from '@/hooks/use-toast';
 
 const Dashboard = () => {
-  // Mock data for charts
-  const temperatureData = [
-    { name: '6AM', value: 22 },
-    { name: '9AM', value: 24 },
-    { name: '12PM', value: 28 },
-    { name: '3PM', value: 30 },
-    { name: '6PM', value: 27 },
-    { name: '9PM', value: 25 },
-  ];
+  const { user } = useAuth();
+  const navigate = useNavigate();
+  const [hasBudgetPlans, setHasBudgetPlans] = useState(false);
+  
+  // Check if user has any budget plans
+  useEffect(() => {
+    if (user?.id) {
+      try {
+        const allPlans = JSON.parse(localStorage.getItem('budgetPlans') || '[]');
+        const userPlans = allPlans.filter((plan: any) => plan.userId === user.id);
+        setHasBudgetPlans(userPlans.length > 0);
+      } catch (error) {
+        console.error('Error checking budget plans:', error);
+        setHasBudgetPlans(false);
+      }
+    }
+  }, [user?.id]);
 
-  const weeklyWeatherData = [
-    { day: 'Mon', temp: 28, rain: 10 },
-    { day: 'Tue', temp: 29, rain: 20 },
-    { day: 'Wed', temp: 27, rain: 30 },
-    { day: 'Thu', temp: 26, rain: 15 },
-    { day: 'Fri', temp: 29, rain: 5 },
-    { day: 'Sat', temp: 30, rain: 0 },
-    { day: 'Sun', temp: 28, rain: 12 },
-  ];
-
-  const waterConsumptionData = [
-    { name: 'Jan', value: 1200 },
-    { name: 'Feb', value: 1400 },
-    { name: 'Mar', value: 1800 },
-    { name: 'Apr', value: 2200 },
-    { name: 'May', value: 2600 },
-    { name: 'Jun', value: 2400 },
-  ];
-
-  const financeData = [
-    { name: 'Jan', revenue: 5000, expenses: 3000 },
-    { name: 'Feb', revenue: 4500, expenses: 3200 },
-    { name: 'Mar', revenue: 6000, expenses: 3500 },
-    { name: 'Apr', revenue: 7000, expenses: 4000 },
-    { name: 'May', revenue: 8500, expenses: 4200 },
-    { name: 'Jun', revenue: 9000, expenses: 4500 },
-  ];
-
-  const cropHealthData = [
-    { name: 'Healthy', value: 70 },
-    { name: 'At Risk', value: 20 },
-    { name: 'Unhealthy', value: 10 },
-  ];
+  // Reset dashboard data
+  const handleResetDashboard = () => {
+    if (window.confirm('Are you sure you want to clear all your dashboard data?')) {
+      // We don't clear localStorage completely as it contains user auth info
+      // Only clear budget plans for this user
+      try {
+        const allPlans = JSON.parse(localStorage.getItem('budgetPlans') || '[]');
+        const otherPlans = allPlans.filter((plan: any) => plan.userId !== user?.id);
+        localStorage.setItem('budgetPlans', JSON.stringify(otherPlans));
+        setHasBudgetPlans(false);
+        
+        toast({
+          title: "Dashboard Reset",
+          description: "Your dashboard data has been reset successfully.",
+        });
+      } catch (error) {
+        console.error('Error resetting dashboard:', error);
+      }
+    }
+  };
 
   return (
     <DashboardLayout>
       <div className="space-y-6">
-        <DashboardHeader />
+        <div className="flex justify-between items-center">
+          <DashboardHeader />
+          <Button 
+            variant="outline" 
+            size="sm"
+            onClick={handleResetDashboard}
+            className="text-gray-500"
+          >
+            <RefreshCw className="h-4 w-4 mr-2" /> Reset Dashboard
+          </Button>
+        </div>
         
-        {/* Overview Cards */}
-        <DashboardMetrics />
-        
-        {/* Main Content Grid */}
+        {/* User-specific content */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Left Column - Environmental Data */}
+          {/* Main Content */}
           <div className="lg:col-span-2 space-y-6">
-            <WeatherWidgets temperatureData={temperatureData} />
+            {hasBudgetPlans ? (
+              <>
+                <Card className="p-6 border-gray-200">
+                  <h2 className="text-xl font-bold mb-4">Your Budget Summary</h2>
+                  <p className="mb-4">You have created budget plans. View and manage them in the Budget Planning section.</p>
+                  <Button onClick={() => navigate('/budget-planning')} className="bg-krishi-600 hover:bg-krishi-700">
+                    View Budget Plans
+                  </Button>
+                </Card>
+              </>
+            ) : (
+              <Card className="p-6 border-gray-200">
+                <h2 className="text-xl font-bold mb-4">Get Started with Budget Planning</h2>
+                <p className="mb-4">Create your first budget plan to optimize your agricultural spending.</p>
+                <Button onClick={() => navigate('/budget-planning')} className="bg-krishi-600 hover:bg-krishi-700">
+                  Create Budget Plan
+                </Button>
+              </Card>
+            )}
             
-            <WeatherForecast weeklyWeatherData={weeklyWeatherData} />
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <CropHealth cropHealthData={cropHealthData} />
-              <WaterConsumption waterConsumptionData={waterConsumptionData} />
-            </div>
-            
-            <FarmIncome financeData={financeData} />
+            {/* Weather data - keep as it's useful context */}
+            <WeatherWidgets temperatureData={[
+              { name: '6AM', value: 22 },
+              { name: '9AM', value: 24 },
+              { name: '12PM', value: 28 },
+              { name: '3PM', value: 30 },
+              { name: '6PM', value: 27 },
+              { name: '9PM', value: 25 },
+            ]} />
           </div>
           
           {/* Right Column - Chatbot */}
