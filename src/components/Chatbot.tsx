@@ -49,7 +49,7 @@ const Chatbot = () => {
           <ChatInput 
             value={input}
             onChange={(e) => setInput(e.target.value)}
-            onSend={handleSendMessage}
+            onSend={() => handleSendMessage(input)}
             onKeyDown={handleKeyDown}
             placeholder={t("ask_question")}
             disabled={isLoading}
