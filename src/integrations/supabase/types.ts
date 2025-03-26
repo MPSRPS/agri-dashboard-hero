@@ -184,6 +184,63 @@ export type Database = {
         }
         Relationships: []
       }
+      user_crops: {
+        Row: {
+          created_at: string
+          crop_name: string
+          id: string
+          planted_date: string | null
+          status: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          crop_name: string
+          id?: string
+          planted_date?: string | null
+          status: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          crop_name?: string
+          id?: string
+          planted_date?: string | null
+          status?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      user_tasks: {
+        Row: {
+          created_at: string
+          description: string | null
+          due_date: string | null
+          id: string
+          status: string
+          title: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          due_date?: string | null
+          id?: string
+          status: string
+          title: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          due_date?: string | null
+          id?: string
+          status?: string
+          title?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
