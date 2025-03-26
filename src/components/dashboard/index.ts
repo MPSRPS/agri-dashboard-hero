@@ -12,3 +12,4 @@ export { default as MarketTrends } from './MarketTrends';
 export { default as WeatherForecastCard } from './WeatherForecastCard';
 export { default as SoilAnalyzerCard } from './SoilAnalyzerCard';
 export { default as CropPerformanceCard } from './CropPerformanceCard';
+export { default as DataManagement } from './DataManagement';
