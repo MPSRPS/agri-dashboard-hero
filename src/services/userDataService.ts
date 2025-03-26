@@ -8,7 +8,7 @@ export interface Crop {
   crop_name: string;
   status: string;
   planted_date?: string | null;
-  user_id?: string;
+  user_id: string; // Changed from optional to required
 }
 
 export interface Task {
@@ -17,7 +17,7 @@ export interface Task {
   description?: string | null;
   due_date?: string | null;
   status: string;
-  user_id?: string;
+  user_id: string; // Changed from optional to required
 }
 
 // Fetch user crops
@@ -224,12 +224,12 @@ export const deleteTask = async (id: string) => {
 export const useUserData = () => {
   const { user } = useAuth();
   
-  const addUserCrop = async (crop: Crop) => {
+  const addUserCrop = async (crop: Omit<Crop, 'user_id'>) => {
     if (!user) return null;
     return addCrop({ ...crop, user_id: user.id });
   };
   
-  const addUserTask = async (task: Task) => {
+  const addUserTask = async (task: Omit<Task, 'user_id'>) => {
     if (!user) return null;
     return addTask({ ...task, user_id: user.id });
   };
