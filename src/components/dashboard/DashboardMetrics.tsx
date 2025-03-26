@@ -5,6 +5,22 @@ import { Card } from '@/components/ui/card';
 import { useTranslation } from '@/hooks/useTranslation';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/context/AuthContext';
+import { Skeleton } from '@/components/ui/skeleton';
+
+// Define types for our data
+interface Crop {
+  id: string;
+  crop_name: string;
+  status: string;
+  user_id: string;
+}
+
+interface Task {
+  id: string;
+  title: string;
+  status: string;
+  user_id: string;
+}
 
 const DashboardMetrics = () => {
   const { t } = useTranslation();
@@ -15,34 +31,75 @@ const DashboardMetrics = () => {
     pendingTasks: 0,
     completedTasks: 0
   });
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchMetrics = async () => {
-      if (!user) return;
+      if (!user) {
+        setLoading(false);
+        return;
+      }
 
-      // Fetch metrics from Supabase (replace with your actual tables and logic)
-      const { data: cropData, error: cropError } = await supabase
-        .from('user_crops')
-        .select('*', { count: 'exact' })
-        .eq('user_id', user.id);
+      try {
+        setLoading(true);
+        
+        // Manual type casting to avoid TypeScript errors while waiting for schema updates
+        const { data: cropData, error: cropError } = await supabase
+          .from('user_crops')
+          .select('*')
+          .eq('user_id', user.id);
 
-      const { data: taskData, error: taskError } = await supabase
-        .from('user_tasks')
-        .select('*')
-        .eq('user_id', user.id);
+        const { data: taskData, error: taskError } = await supabase
+          .from('user_tasks')
+          .select('*')
+          .eq('user_id', user.id);
 
-      if (!cropError && !taskError) {
-        setMetrics({
-          totalCrops: cropData.length,
-          harvestReady: cropData.filter(crop => crop.status === 'ready').length,
-          pendingTasks: taskData.filter(task => task.status === 'pending').length,
-          completedTasks: taskData.filter(task => task.status === 'completed').length
-        });
+        if (cropError) {
+          console.error('Error fetching crops:', cropError);
+        }
+        
+        if (taskError) {
+          console.error('Error fetching tasks:', taskError);
+        }
+
+        // If we successfully get data, process it
+        if (cropData && taskData) {
+          const typedCropData = cropData as unknown as Crop[];
+          const typedTaskData = taskData as unknown as Task[];
+          
+          setMetrics({
+            totalCrops: typedCropData.length,
+            harvestReady: typedCropData.filter(crop => crop.status === 'ready').length,
+            pendingTasks: typedTaskData.filter(task => task.status === 'pending').length,
+            completedTasks: typedTaskData.filter(task => task.status === 'completed').length
+          });
+        }
+      } catch (error) {
+        console.error('Error in fetchMetrics:', error);
+      } finally {
+        setLoading(false);
       }
     };
 
     fetchMetrics();
   }, [user]);
+
+  // Render skeleton UI while loading
+  if (loading) {
+    return (
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        {Array(4).fill(0).map((_, index) => (
+          <Card key={index} className="p-4 flex items-center gap-4">
+            <Skeleton className="h-12 w-12 rounded-full" />
+            <div className="space-y-2">
+              <Skeleton className="h-4 w-24" />
+              <Skeleton className="h-6 w-16" />
+            </div>
+          </Card>
+        ))}
+      </div>
+    );
+  }
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
