@@ -30,11 +30,21 @@ const DataManagement = () => {
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState("crops");
   
-  // New crop/task states
+  // New crop/task states - Initialize with empty user_id that will be filled when adding
   const [showAddCrop, setShowAddCrop] = useState(false);
   const [showAddTask, setShowAddTask] = useState(false);
-  const [newCrop, setNewCrop] = useState<Crop>({ crop_name: '', status: 'growing' });
-  const [newTask, setNewTask] = useState<Task>({ title: '', status: 'pending', description: '' });
+  
+  // Initialize with dummy user_id that will be replaced when calling addCrop/addTask
+  const [newCrop, setNewCrop] = useState<Omit<Crop, 'user_id'>>({ 
+    crop_name: '', 
+    status: 'growing' 
+  });
+  
+  const [newTask, setNewTask] = useState<Omit<Task, 'user_id'>>({ 
+    title: '', 
+    status: 'pending', 
+    description: '' 
+  });
   
   // Edit states
   const [editingCrop, setEditingCrop] = useState<Crop | null>(null);
