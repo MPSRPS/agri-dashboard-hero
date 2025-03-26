@@ -1,7 +1,8 @@
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { toast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/context/AuthContext';
 
 interface PlantDiseaseDetectionResult {
   disease: string;
@@ -12,12 +13,37 @@ interface PlantDiseaseDetectionResult {
 }
 
 export const usePlantDiseaseDetection = () => {
+  const { user } = useAuth();
   const [result, setResult] = useState<PlantDiseaseDetectionResult | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [isDragging, setIsDragging] = useState(false);
   const [prediction, setPrediction] = useState(null);
+  const [bucketReady, setBucketReady] = useState(false);
+
+  // Check and set up the storage bucket on component mount
+  useEffect(() => {
+    const setupStorage = async () => {
+      try {
+        const { data, error } = await supabase.functions.invoke('storage-setup');
+        
+        if (error) {
+          console.error('Error setting up storage:', error);
+          return;
+        }
+        
+        if (data?.success) {
+          console.log('Storage setup successful:', data.message);
+          setBucketReady(true);
+        }
+      } catch (error) {
+        console.error('Error invoking storage-setup function:', error);
+      }
+    };
+    
+    setupStorage();
+  }, []);
 
   // Function to handle file selection
   const handleFile = (file: File) => {
@@ -53,6 +79,15 @@ export const usePlantDiseaseDetection = () => {
   // Function to analyze the selected image
   const analyzeImage = async () => {
     if (!selectedImage) return;
+    
+    if (!bucketReady) {
+      toast({
+        title: "System not ready",
+        description: "The storage system is still initializing. Please try again in a moment.",
+        variant: "destructive",
+      });
+      return;
+    }
     
     // Convert data URL to File object
     try {
@@ -105,7 +140,10 @@ export const usePlantDiseaseDetection = () => {
       const { data, error: functionError } = await supabase
         .functions
         .invoke('analyze-plant-disease', {
-          body: { imageUrl },
+          body: { 
+            imageUrl,
+            userId: user?.id
+          },
         });
 
       if (functionError) {
@@ -140,6 +178,7 @@ export const usePlantDiseaseDetection = () => {
     prediction,
     handleFile,
     resetImage,
-    analyzeImage
+    analyzeImage,
+    bucketReady
   };
 };

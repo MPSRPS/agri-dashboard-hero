@@ -5,6 +5,7 @@ import DashboardHeader from '@/components/dashboard/DashboardHeader';
 import DashboardMetrics from '@/components/dashboard/DashboardMetrics';
 import WeatherWidgets from '@/components/dashboard/WeatherWidgets';
 import ChatInterface from '@/components/dashboard/ChatInterface';
+import DataManagement from '@/components/dashboard/DataManagement';
 import { useAuth } from '@/context/AuthContext';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -110,6 +111,9 @@ const Dashboard = () => {
               { name: '6PM', value: 27 },
               { name: '9PM', value: 25 },
             ]} />
+            
+            {/* Data Management Component */}
+            <DataManagement />
             
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <SoilAnalyzerCard />
