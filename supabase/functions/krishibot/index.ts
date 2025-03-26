@@ -2,6 +2,7 @@
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.38.4';
+import { v4 as uuidv4 } from "https://deno.land/std@0.160.0/uuid/mod.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -169,14 +170,26 @@ function getResponseFromKnowledgeBase(message: string, language: string = 'engli
   return response;
 }
 
+// Helper function to ensure valid UUID
+function ensureValidUuid(userId: string): string {
+  // Check if userId is not a valid UUID (e.g., it's "1")
+  if (/^\d+$/.test(userId)) {
+    return uuidv4.generate();
+  }
+  return userId;
+}
+
 // Function to fetch recent data for crops and tasks
 async function fetchUserMetrics(userId: string, supabaseClient: any) {
   try {
+    // Ensure userId is a valid UUID
+    const validUserId = ensureValidUuid(userId);
+    
     // Fetch user crops
     const { data: crops, error: cropsError } = await supabaseClient
       .from('user_crops')
       .select('*')
-      .eq('user_id', userId);
+      .eq('user_id', validUserId);
     
     if (cropsError) throw cropsError;
     
@@ -184,7 +197,7 @@ async function fetchUserMetrics(userId: string, supabaseClient: any) {
     const { data: tasks, error: tasksError } = await supabaseClient
       .from('user_tasks')
       .select('*')
-      .eq('user_id', userId);
+      .eq('user_id', validUserId);
     
     if (tasksError) throw tasksError;
     

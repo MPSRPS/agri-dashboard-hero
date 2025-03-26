@@ -4,7 +4,7 @@ import { Card } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { AlertCircle } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
-import { useUserData, Crop, Task } from "@/services/userDataService";
+import { useUserData } from "@/services/userDataService";
 import { useAuth } from '@/context/AuthContext';
 import CropsList from './data-management/CropsList';
 import TasksList from './data-management/TasksList';
@@ -23,8 +23,8 @@ const DataManagement = () => {
     deleteTask
   } = useUserData();
   
-  const [crops, setCrops] = useState<Crop[]>([]);
-  const [tasks, setTasks] = useState<Task[]>([]);
+  const [crops, setCrops] = useState([]);
+  const [tasks, setTasks] = useState([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState("crops");
   
@@ -33,8 +33,8 @@ const DataManagement = () => {
   const [showAddTask, setShowAddTask] = useState(false);
   
   // Delete dialog states
-  const [deletingCrop, setDeletingCrop] = useState<string | null>(null);
-  const [deletingTask, setDeletingTask] = useState<string | null>(null);
+  const [deletingCrop, setDeletingCrop] = useState(null);
+  const [deletingTask, setDeletingTask] = useState(null);
   
   // Load initial data
   useEffect(() => {
@@ -49,8 +49,8 @@ const DataManagement = () => {
           fetchUserTasks()
         ]);
         
-        setCrops(cropsData);
-        setTasks(tasksData);
+        setCrops(cropsData || []);
+        setTasks(tasksData || []);
       } catch (error) {
         console.error('Error loading data:', error);
         toast({
@@ -64,10 +64,10 @@ const DataManagement = () => {
     };
     
     loadData();
-  }, [user]);
+  }, [user, fetchUserCrops, fetchUserTasks]);
   
   // Handle adding a new crop
-  const handleAddCrop = async (newCrop: Omit<Crop, 'user_id'>) => {
+  const handleAddCrop = async (newCrop) => {
     const result = await addCrop(newCrop);
     if (result) {
       setCrops([...crops, result]);
@@ -76,7 +76,7 @@ const DataManagement = () => {
   };
   
   // Handle updating a crop
-  const handleUpdateCrop = async (updatedCrop: Crop) => {
+  const handleUpdateCrop = async (updatedCrop) => {
     if (!updatedCrop.id) return;
     
     const result = await updateCrop(updatedCrop.id, updatedCrop);
@@ -97,7 +97,7 @@ const DataManagement = () => {
   };
   
   // Handle adding a new task
-  const handleAddTask = async (newTask: Omit<Task, 'user_id'>) => {
+  const handleAddTask = async (newTask) => {
     const result = await addTask(newTask);
     if (result) {
       setTasks([...tasks, result]);
@@ -106,7 +106,7 @@ const DataManagement = () => {
   };
   
   // Handle updating a task
-  const handleUpdateTask = async (updatedTask: Task) => {
+  const handleUpdateTask = async (updatedTask) => {
     if (!updatedTask.id) return;
     
     const result = await updateTask(updatedTask.id, updatedTask);

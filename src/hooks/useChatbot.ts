@@ -1,10 +1,11 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useLanguage } from "@/context/LanguageContext";
 import { useAuth } from "@/context/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import { Message } from "@/components/chat/ChatMessages";
+import { v4 as uuidv4 } from "uuid";
 
 export const useChatbot = () => {
   const { t, currentLanguage } = useLanguage();
@@ -26,14 +27,43 @@ export const useChatbot = () => {
     confidence: 0.85,
   });
 
+  // Restore chat messages from localStorage
+  useEffect(() => {
+    if (user) {
+      try {
+        const savedMessages = localStorage.getItem(`chat_messages_${user.id}`);
+        if (savedMessages) {
+          const parsedMessages = JSON.parse(savedMessages);
+          if (Array.isArray(parsedMessages) && parsedMessages.length > 0) {
+            setMessages(parsedMessages);
+          }
+        }
+      } catch (error) {
+        console.error("Error restoring chat messages:", error);
+      }
+    }
+  }, [user]);
+
+  // Save messages to localStorage when they change
+  useEffect(() => {
+    if (user && messages.length > 1) { // Only save if there are messages beyond the welcome message
+      try {
+        localStorage.setItem(`chat_messages_${user.id}`, JSON.stringify(messages));
+      } catch (error) {
+        console.error("Error saving chat messages:", error);
+      }
+    }
+  }, [messages, user]);
+
   const handleAttachmentChange = (file: File | null) => {
     setSelectedAttachment(file);
   };
 
   const uploadAttachment = async (file: File): Promise<string | null> => {
     try {
+      // Generate a valid UUID for file name
       const fileExt = file.name.split('.').pop();
-      const fileName = `${Math.random().toString(36).substring(2)}.${fileExt}`;
+      const fileName = `${uuidv4()}.${fileExt}`;
       const filePath = `${user?.id || 'anonymous'}/${fileName}`;
       
       // For now, we'll just return a mock URL since we don't have storage set up

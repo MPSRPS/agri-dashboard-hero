@@ -1,6 +1,8 @@
 
 import { createContext, useContext, useState, useEffect, ReactNode } from "react";
 import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
+import { v4 as uuidv4 } from "uuid";
 
 interface User {
   id: string;
@@ -29,13 +31,27 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     // Check for saved user in localStorage
     const savedUser = localStorage.getItem("krishiUser");
     if (savedUser) {
-      setUser(JSON.parse(savedUser));
-      setIsAuthenticated(true);
+      try {
+        const parsedUser = JSON.parse(savedUser);
+        // Ensure the user ID is a valid UUID
+        if (parsedUser && parsedUser.id) {
+          // If the ID is numeric (like "1"), convert it to a valid UUID
+          if (/^\d+$/.test(parsedUser.id)) {
+            parsedUser.id = uuidv4();
+            localStorage.setItem("krishiUser", JSON.stringify(parsedUser));
+          }
+        }
+        setUser(parsedUser);
+        setIsAuthenticated(true);
+      } catch (error) {
+        console.error("Error parsing saved user:", error);
+        localStorage.removeItem("krishiUser");
+      }
     }
     setIsLoading(false);
   }, []);
 
-  // Mock login function (in a real app, this would call an API)
+  // Login function (in a real app, this would call an API)
   const login = async (email: string, password: string) => {
     setIsLoading(true);
     
@@ -43,17 +59,20 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       // Simulate API call
       await new Promise(resolve => setTimeout(resolve, 1000));
       
-      // Demo user - in real app, this would come from backend
-      const mockUser = {
-        id: "1",
-        name: "Pranav Kolhe",
+      // Generate a proper UUID for the user
+      const userId = uuidv4();
+      
+      // Create a user object with the provided email and a UUID
+      const userData = {
+        id: userId,
+        name: email.split('@')[0], // Use part of email as name for demo
         email,
         avatar: "/lovable-uploads/a8aa18ab-a030-47a3-958e-48a63d870b2f.png"
       };
       
-      setUser(mockUser);
+      setUser(userData);
       setIsAuthenticated(true);
-      localStorage.setItem("krishiUser", JSON.stringify(mockUser));
+      localStorage.setItem("krishiUser", JSON.stringify(userData));
       toast.success("Logged in successfully");
     } catch (error) {
       toast.error("Login failed. Please try again.");
@@ -63,7 +82,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
-  // Mock signup function
+  // Signup function
   const signup = async (name: string, email: string, password: string) => {
     setIsLoading(true);
     
@@ -71,15 +90,18 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       // Simulate API call
       await new Promise(resolve => setTimeout(resolve, 1000));
       
-      const mockUser = {
-        id: "1",
+      // Generate a proper UUID for the user
+      const userId = uuidv4();
+      
+      const userData = {
+        id: userId,
         name,
         email,
       };
       
-      setUser(mockUser);
+      setUser(userData);
       setIsAuthenticated(true);
-      localStorage.setItem("krishiUser", JSON.stringify(mockUser));
+      localStorage.setItem("krishiUser", JSON.stringify(userData));
       toast.success("Account created successfully");
     } catch (error) {
       toast.error("Signup failed. Please try again.");

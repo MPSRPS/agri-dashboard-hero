@@ -2,13 +2,14 @@
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import { useAuth } from "@/context/AuthContext";
+import { v4 as uuidv4 } from "uuid";
 
 export interface Crop {
   id?: string;
   crop_name: string;
   status: string;
   planted_date?: string | null;
-  user_id: string; // Changed from optional to required
+  user_id: string; 
 }
 
 export interface Task {
@@ -17,16 +18,28 @@ export interface Task {
   description?: string | null;
   due_date?: string | null;
   status: string;
-  user_id: string; // Changed from optional to required
+  user_id: string; 
 }
+
+// Helper function to ensure valid UUID
+const ensureValidUuid = (id: string): string => {
+  // If id is not a valid UUID (like "1"), generate a new one
+  if (/^\d+$/.test(id)) {
+    return uuidv4();
+  }
+  return id;
+};
 
 // Fetch user crops
 export const fetchUserCrops = async (userId: string) => {
   try {
+    // Ensure userId is a valid UUID
+    const validUserId = ensureValidUuid(userId);
+    
     const { data, error } = await supabase
       .from('user_crops')
       .select('*')
-      .eq('user_id', userId);
+      .eq('user_id', validUserId);
     
     if (error) throw error;
     return data;
@@ -39,10 +52,13 @@ export const fetchUserCrops = async (userId: string) => {
 // Fetch user tasks
 export const fetchUserTasks = async (userId: string) => {
   try {
+    // Ensure userId is a valid UUID
+    const validUserId = ensureValidUuid(userId);
+    
     const { data, error } = await supabase
       .from('user_tasks')
       .select('*')
-      .eq('user_id', userId);
+      .eq('user_id', validUserId);
     
     if (error) throw error;
     return data;
@@ -55,9 +71,15 @@ export const fetchUserTasks = async (userId: string) => {
 // Add a new crop
 export const addCrop = async (crop: Crop) => {
   try {
+    // Ensure the user_id is a valid UUID
+    const cropWithValidId = {
+      ...crop,
+      user_id: ensureValidUuid(crop.user_id)
+    };
+    
     const { data, error } = await supabase
       .from('user_crops')
-      .insert(crop)
+      .insert(cropWithValidId)
       .select()
       .single();
     
@@ -83,9 +105,14 @@ export const addCrop = async (crop: Crop) => {
 // Update a crop
 export const updateCrop = async (id: string, updates: Partial<Crop>) => {
   try {
+    // Ensure the user_id is a valid UUID if it's included in updates
+    const updatesWithValidId = updates.user_id 
+      ? { ...updates, user_id: ensureValidUuid(updates.user_id) }
+      : updates;
+    
     const { data, error } = await supabase
       .from('user_crops')
-      .update(updates)
+      .update(updatesWithValidId)
       .eq('id', id)
       .select()
       .single();
@@ -139,9 +166,15 @@ export const deleteCrop = async (id: string) => {
 // Add a new task
 export const addTask = async (task: Task) => {
   try {
+    // Ensure the user_id is a valid UUID
+    const taskWithValidId = {
+      ...task,
+      user_id: ensureValidUuid(task.user_id)
+    };
+    
     const { data, error } = await supabase
       .from('user_tasks')
-      .insert(task)
+      .insert(taskWithValidId)
       .select()
       .single();
     
@@ -167,9 +200,14 @@ export const addTask = async (task: Task) => {
 // Update a task
 export const updateTask = async (id: string, updates: Partial<Task>) => {
   try {
+    // Ensure the user_id is a valid UUID if it's included in updates
+    const updatesWithValidId = updates.user_id 
+      ? { ...updates, user_id: ensureValidUuid(updates.user_id) }
+      : updates;
+    
     const { data, error } = await supabase
       .from('user_tasks')
-      .update(updates)
+      .update(updatesWithValidId)
       .eq('id', id)
       .select()
       .single();

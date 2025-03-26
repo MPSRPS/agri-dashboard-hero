@@ -19,6 +19,7 @@ const TaskForm = ({ onAdd, onCancel }: TaskFormProps) => {
     status: 'pending', 
     description: '' 
   });
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleSubmit = async () => {
     if (!newTask.title.trim()) {
@@ -30,8 +31,15 @@ const TaskForm = ({ onAdd, onCancel }: TaskFormProps) => {
       return;
     }
     
-    await onAdd(newTask);
-    setNewTask({ title: '', status: 'pending', description: '' });
+    setIsSubmitting(true);
+    try {
+      await onAdd(newTask);
+      setNewTask({ title: '', status: 'pending', description: '' });
+    } catch (error) {
+      console.error('Error adding task:', error);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -80,14 +88,16 @@ const TaskForm = ({ onAdd, onCancel }: TaskFormProps) => {
             variant="outline" 
             size="sm"
             onClick={onCancel}
+            disabled={isSubmitting}
           >
             Cancel
           </Button>
           <Button 
             size="sm"
             onClick={handleSubmit}
+            disabled={isSubmitting}
           >
-            Add Task
+            {isSubmitting ? 'Adding...' : 'Add Task'}
           </Button>
         </div>
       </div>

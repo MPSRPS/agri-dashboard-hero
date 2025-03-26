@@ -18,6 +18,7 @@ const CropForm = ({ onAdd, onCancel }: CropFormProps) => {
     crop_name: '', 
     status: 'growing' 
   });
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleSubmit = async () => {
     if (!newCrop.crop_name.trim()) {
@@ -29,8 +30,15 @@ const CropForm = ({ onAdd, onCancel }: CropFormProps) => {
       return;
     }
     
-    await onAdd(newCrop);
-    setNewCrop({ crop_name: '', status: 'growing' });
+    setIsSubmitting(true);
+    try {
+      await onAdd(newCrop);
+      setNewCrop({ crop_name: '', status: 'growing' });
+    } catch (error) {
+      console.error('Error adding crop:', error);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -69,14 +77,16 @@ const CropForm = ({ onAdd, onCancel }: CropFormProps) => {
             variant="outline" 
             size="sm"
             onClick={onCancel}
+            disabled={isSubmitting}
           >
             Cancel
           </Button>
           <Button 
             size="sm"
             onClick={handleSubmit}
+            disabled={isSubmitting}
           >
-            Add Crop
+            {isSubmitting ? 'Adding...' : 'Add Crop'}
           </Button>
         </div>
       </div>
