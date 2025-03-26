@@ -1,10 +1,48 @@
 
+import { useState, useEffect } from 'react';
 import { Calendar, CheckCircle2, Clock } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { useTranslation } from '@/hooks/useTranslation';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/context/AuthContext';
 
 const DashboardMetrics = () => {
   const { t } = useTranslation();
+  const { user } = useAuth();
+  const [metrics, setMetrics] = useState({
+    totalCrops: 0,
+    harvestReady: 0,
+    pendingTasks: 0,
+    completedTasks: 0
+  });
+
+  useEffect(() => {
+    const fetchMetrics = async () => {
+      if (!user) return;
+
+      // Fetch metrics from Supabase (replace with your actual tables and logic)
+      const { data: cropData, error: cropError } = await supabase
+        .from('user_crops')
+        .select('*', { count: 'exact' })
+        .eq('user_id', user.id);
+
+      const { data: taskData, error: taskError } = await supabase
+        .from('user_tasks')
+        .select('*')
+        .eq('user_id', user.id);
+
+      if (!cropError && !taskError) {
+        setMetrics({
+          totalCrops: cropData.length,
+          harvestReady: cropData.filter(crop => crop.status === 'ready').length,
+          pendingTasks: taskData.filter(task => task.status === 'pending').length,
+          completedTasks: taskData.filter(task => task.status === 'completed').length
+        });
+      }
+    };
+
+    fetchMetrics();
+  }, [user]);
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -14,7 +52,7 @@ const DashboardMetrics = () => {
         </div>
         <div>
           <p className="text-sm text-gray-500">{t('totalCrops')}</p>
-          <h3 className="text-2xl font-bold text-gray-800">12</h3>
+          <h3 className="text-2xl font-bold text-gray-800">{metrics.totalCrops}</h3>
         </div>
       </Card>
       
@@ -24,7 +62,7 @@ const DashboardMetrics = () => {
         </div>
         <div>
           <p className="text-sm text-gray-500">{t('harvestReady')}</p>
-          <h3 className="text-2xl font-bold text-gray-800">4</h3>
+          <h3 className="text-2xl font-bold text-gray-800">{metrics.harvestReady}</h3>
         </div>
       </Card>
       
@@ -34,7 +72,7 @@ const DashboardMetrics = () => {
         </div>
         <div>
           <p className="text-sm text-gray-500">{t('pendingTasks')}</p>
-          <h3 className="text-2xl font-bold text-gray-800">8</h3>
+          <h3 className="text-2xl font-bold text-gray-800">{metrics.pendingTasks}</h3>
         </div>
       </Card>
       
@@ -44,7 +82,7 @@ const DashboardMetrics = () => {
         </div>
         <div>
           <p className="text-sm text-gray-500">{t('completedTasks')}</p>
-          <h3 className="text-2xl font-bold text-gray-800">16</h3>
+          <h3 className="text-2xl font-bold text-gray-800">{metrics.completedTasks}</h3>
         </div>
       </Card>
     </div>
