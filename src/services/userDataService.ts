@@ -23,11 +23,17 @@ export interface Task {
 
 // Helper function to ensure valid UUID
 const ensureValidUuid = (id: string): string => {
-  // If id is not a valid UUID (like "1"), generate a new one
-  if (/^\d+$/.test(id)) {
+  try {
+    // Test if it's already a valid UUID
+    if (/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id)) {
+      return id;
+    }
+    // If not a valid UUID format, generate a new one
+    return uuidv4();
+  } catch (error) {
+    console.error('Error validating UUID:', error);
     return uuidv4();
   }
-  return id;
 };
 
 // Fetch user crops
@@ -264,12 +270,14 @@ export const useUserData = () => {
   
   const addUserCrop = async (crop: Omit<Crop, 'user_id'>) => {
     if (!user) return null;
-    return addCrop({ ...crop, user_id: user.id });
+    const userUuid = ensureValidUuid(user.id);
+    return addCrop({ ...crop, user_id: userUuid });
   };
   
   const addUserTask = async (task: Omit<Task, 'user_id'>) => {
     if (!user) return null;
-    return addTask({ ...task, user_id: user.id });
+    const userUuid = ensureValidUuid(user.id);
+    return addTask({ ...task, user_id: userUuid });
   };
   
   return {

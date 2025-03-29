@@ -12,6 +12,13 @@ interface Disease {
   name: string;
   description: string;
   confidence?: number;
+  symptoms?: string[];
+  treatments?: string[];
+  preventive_measures?: string[];
+  environmental_factors?: {
+    name: string;
+    value: string;
+  }[];
 }
 
 interface PredictionResult {
@@ -154,15 +161,27 @@ serve(async (req) => {
     
     // Save analysis to history if userId is provided
     if (userId) {
-      const { error: insertError } = await supabase.from('plant_analysis_history').insert({
-        user_id: userId,
-        image_path: imageUrl,
-        main_disease_id: mainDiseaseId,
-        confidence: mainDiseaseConfidence
-      })
-      
-      if (insertError) {
-        console.error("Error saving analysis to history:", insertError);
+      try {
+        const validUserId = userId.match(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i) 
+          ? userId 
+          : null;
+          
+        if (validUserId) {
+          const { error: insertError } = await supabase.from('plant_analysis_history').insert({
+            user_id: validUserId,
+            image_path: imageUrl,
+            main_disease_id: mainDiseaseId,
+            confidence: mainDiseaseConfidence
+          })
+          
+          if (insertError) {
+            console.error("Error saving analysis to history:", insertError);
+          }
+        } else {
+          console.log("Skipping history save - invalid UUID format for user_id:", userId);
+        }
+      } catch (error) {
+        console.error("Error in history save process:", error);
       }
     }
     
@@ -193,7 +212,7 @@ serve(async (req) => {
         },
         diseases: []
       }),
-      { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 } // Changed to 200
+      { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 }
     )
   }
 })

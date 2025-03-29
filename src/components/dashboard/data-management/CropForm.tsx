@@ -7,6 +7,11 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "@/hooks/use-toast";
 import { Crop } from "@/services/userDataService";
+import { Calendar } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { format } from "date-fns";
+import { CalendarIcon } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 interface CropFormProps {
   onAdd: (crop: Omit<Crop, 'user_id'>) => Promise<void>;
@@ -16,9 +21,11 @@ interface CropFormProps {
 const CropForm = ({ onAdd, onCancel }: CropFormProps) => {
   const [newCrop, setNewCrop] = useState<Omit<Crop, 'user_id'>>({ 
     crop_name: '', 
-    status: 'growing' 
+    status: 'growing',
+    planted_date: null
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [date, setDate] = useState<Date | undefined>(undefined);
 
   const handleSubmit = async () => {
     if (!newCrop.crop_name.trim()) {
@@ -32,8 +39,14 @@ const CropForm = ({ onAdd, onCancel }: CropFormProps) => {
     
     setIsSubmitting(true);
     try {
-      await onAdd(newCrop);
-      setNewCrop({ crop_name: '', status: 'growing' });
+      const cropToAdd = {
+        ...newCrop,
+        planted_date: date ? date.toISOString() : null
+      };
+      
+      await onAdd(cropToAdd);
+      setNewCrop({ crop_name: '', status: 'growing', planted_date: null });
+      setDate(undefined);
     } catch (error) {
       console.error('Error adding crop:', error);
     } finally {
@@ -70,6 +83,33 @@ const CropForm = ({ onAdd, onCancel }: CropFormProps) => {
               <SelectItem value="harvested">Harvested</SelectItem>
             </SelectContent>
           </Select>
+        </div>
+
+        <div>
+          <Label htmlFor="planted-date">Planted Date</Label>
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button
+                id="planted-date"
+                variant={"outline"}
+                className={cn(
+                  "w-full justify-start text-left font-normal",
+                  !date && "text-muted-foreground"
+                )}
+              >
+                <CalendarIcon className="mr-2 h-4 w-4" />
+                {date ? format(date, "PPP") : <span>Pick a date</span>}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-0">
+              <Calendar
+                mode="single"
+                selected={date}
+                onSelect={setDate}
+                initialFocus
+              />
+            </PopoverContent>
+          </Popover>
         </div>
         
         <div className="flex justify-end gap-2 pt-2">
