@@ -30,7 +30,13 @@ export const useGeminiAI = () => {
       const { data, error: geminiError } = await supabase.functions.invoke(
         'gemini-ai', 
         {
-          body: { prompt, type, cropData, soilData, weatherData }
+          body: { 
+            prompt, 
+            type, 
+            cropData, 
+            soilData, 
+            weatherData 
+          }
         }
       );
 

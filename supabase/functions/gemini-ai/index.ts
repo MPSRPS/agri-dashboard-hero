@@ -38,17 +38,17 @@ serve(async (req) => {
     
     // Configure prompt based on request type
     if (type === 'crop_advice') {
-      geminiPrompt = `You are an AI agricultural expert. Based on the following data, provide farming advice:
+      geminiPrompt = `You are an AI agricultural expert specializing in crop management. Based on the following data, provide detailed farming advice:
       
 Soil Data: ${JSON.stringify(soilData)}
 Weather Data: ${JSON.stringify(weatherData)}
 Crop Information: ${JSON.stringify(cropData)}
 
 Please provide detailed advice on:
-1. Optimal farming practices
-2. Potential risks and mitigation strategies
-3. Expected yield and timeline
-4. Sustainability recommendations
+1. Optimal farming practices for these specific conditions
+2. Potential risks and mitigation strategies based on soil and weather data
+3. Expected yield timeline and optimization techniques
+4. Sustainability recommendations and resource management
 
 Format your response as JSON with the following structure:
 {
@@ -61,11 +61,24 @@ Format your response as JSON with the following structure:
 }`;
     } else if (type === 'disease_analysis') {
       apiEndpoint = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-pro-vision:generateContent';
-      // This would be for image analysis with Gemini Pro Vision
+      
+      geminiPrompt = `You are an expert plant pathologist. Analyze this plant image and provide detailed information about:
+      
+1. The most likely disease affecting this plant
+2. Confidence level in your diagnosis
+3. Key symptoms visible in the image
+4. Recommended treatment options 
+5. Prevention strategies for future crops
+
+Be specific and thorough in your analysis, considering all visible symptoms and potential environmental factors.`;
     } else {
       // Default to general prompt
-      geminiPrompt = prompt;
+      geminiPrompt = `You are KrishiBot, an AI agricultural assistant designed to help farmers. Respond to the following query with helpful, practical information: ${prompt}
+
+Provide a thorough yet concise response that a farmer can immediately apply to their situation. Include specific actionable advice whenever possible.`;
     }
+
+    console.log('Sending request to Gemini API with prompt:', geminiPrompt.substring(0, 100) + '...');
 
     const payload = {
       contents: [
@@ -98,6 +111,7 @@ Format your response as JSON with the following structure:
     }
 
     const data = await response.json();
+    console.log('Received response from Gemini API');
     
     let result;
     try {

@@ -43,6 +43,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         }
         setUser(parsedUser);
         setIsAuthenticated(true);
+        
+        // Sync with Supabase session if available
+        syncWithSupabase(parsedUser);
       } catch (error) {
         console.error("Error parsing saved user:", error);
         localStorage.removeItem("krishiUser");
@@ -50,14 +53,54 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
     setIsLoading(false);
   }, []);
+  
+  // Sync the user data with Supabase when possible
+  const syncWithSupabase = async (userData: User) => {
+    try {
+      const { data: existingUser, error: queryError } = await supabase
+        .from('user_profiles')
+        .select('*')
+        .eq('id', userData.id)
+        .single();
+        
+      if (queryError && queryError.code !== 'PGRST116') {
+        console.error("Error checking user profile:", queryError);
+        return;
+      }
+      
+      if (!existingUser) {
+        // Create user profile in Supabase
+        const { error: insertError } = await supabase
+          .from('user_profiles')
+          .insert({
+            id: userData.id,
+            name: userData.name,
+            email: userData.email,
+            avatar_url: userData.avatar
+          });
+          
+        if (insertError) {
+          console.error("Error creating user profile:", insertError);
+        }
+      }
+    } catch (error) {
+      console.error("Error syncing with Supabase:", error);
+    }
+  };
 
-  // Login function (in a real app, this would call an API)
+  // Login function with improved error handling
   const login = async (email: string, password: string) => {
     setIsLoading(true);
     
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      // Validate inputs
+      if (!email.includes('@')) {
+        throw new Error("Please enter a valid email address");
+      }
+      
+      if (password.length < 6) {
+        throw new Error("Password must be at least 6 characters long");
+      }
       
       // Generate a proper UUID for the user
       const userId = uuidv4();
@@ -73,22 +116,36 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       setUser(userData);
       setIsAuthenticated(true);
       localStorage.setItem("krishiUser", JSON.stringify(userData));
+      
+      // Sync with Supabase
+      await syncWithSupabase(userData);
+      
       toast.success("Logged in successfully");
     } catch (error) {
-      toast.error("Login failed. Please try again.");
+      toast.error(error instanceof Error ? error.message : "Login failed. Please try again.");
       console.error("Login error:", error);
     } finally {
       setIsLoading(false);
     }
   };
 
-  // Signup function
+  // Signup function with improved validation
   const signup = async (name: string, email: string, password: string) => {
     setIsLoading(true);
     
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      // Validate inputs
+      if (!name.trim()) {
+        throw new Error("Name is required");
+      }
+      
+      if (!email.includes('@')) {
+        throw new Error("Please enter a valid email address");
+      }
+      
+      if (password.length < 6) {
+        throw new Error("Password must be at least 6 characters long");
+      }
       
       // Generate a proper UUID for the user
       const userId = uuidv4();
@@ -97,14 +154,19 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         id: userId,
         name,
         email,
+        avatar: "/lovable-uploads/a8aa18ab-a030-47a3-958e-48a63d870b2f.png"
       };
       
       setUser(userData);
       setIsAuthenticated(true);
       localStorage.setItem("krishiUser", JSON.stringify(userData));
+      
+      // Sync with Supabase
+      await syncWithSupabase(userData);
+      
       toast.success("Account created successfully");
     } catch (error) {
-      toast.error("Signup failed. Please try again.");
+      toast.error(error instanceof Error ? error.message : "Signup failed. Please try again.");
       console.error("Signup error:", error);
     } finally {
       setIsLoading(false);
