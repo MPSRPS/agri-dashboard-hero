@@ -43,9 +43,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         }
         setUser(parsedUser);
         setIsAuthenticated(true);
-        
-        // Sync with Supabase session if available
-        syncWithSupabase(parsedUser);
       } catch (error) {
         console.error("Error parsing saved user:", error);
         localStorage.removeItem("krishiUser");
@@ -54,40 +51,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     setIsLoading(false);
   }, []);
   
-  // Sync the user data with Supabase when possible
-  const syncWithSupabase = async (userData: User) => {
-    try {
-      const { data: existingUser, error: queryError } = await supabase
-        .from('user_profiles')
-        .select('*')
-        .eq('id', userData.id)
-        .single();
-        
-      if (queryError && queryError.code !== 'PGRST116') {
-        console.error("Error checking user profile:", queryError);
-        return;
-      }
-      
-      if (!existingUser) {
-        // Create user profile in Supabase
-        const { error: insertError } = await supabase
-          .from('user_profiles')
-          .insert({
-            id: userData.id,
-            name: userData.name,
-            email: userData.email,
-            avatar_url: userData.avatar
-          });
-          
-        if (insertError) {
-          console.error("Error creating user profile:", insertError);
-        }
-      }
-    } catch (error) {
-      console.error("Error syncing with Supabase:", error);
-    }
-  };
-
   // Login function with improved error handling
   const login = async (email: string, password: string) => {
     setIsLoading(true);
@@ -116,9 +79,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       setUser(userData);
       setIsAuthenticated(true);
       localStorage.setItem("krishiUser", JSON.stringify(userData));
-      
-      // Sync with Supabase
-      await syncWithSupabase(userData);
       
       toast.success("Logged in successfully");
     } catch (error) {
@@ -160,9 +120,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       setUser(userData);
       setIsAuthenticated(true);
       localStorage.setItem("krishiUser", JSON.stringify(userData));
-      
-      // Sync with Supabase
-      await syncWithSupabase(userData);
       
       toast.success("Account created successfully");
     } catch (error) {
