@@ -21,7 +21,6 @@ export const usePlantDiseaseDetection = () => {
   const [prediction, setPrediction] = useState(null);
   const [bucketReady, setBucketReady] = useState(false);
 
-  // Check and set up the storage bucket on component mount
   useEffect(() => {
     const setupStorage = async () => {
       try {
@@ -44,11 +43,9 @@ export const usePlantDiseaseDetection = () => {
     setupStorage();
   }, []);
 
-  // Function to handle file selection
   const handleFile = (file: File) => {
     if (!file) return;
     
-    // Check if the file is an image
     if (!file.type.startsWith('image/')) {
       toast({
         title: "Invalid file type",
@@ -58,13 +55,11 @@ export const usePlantDiseaseDetection = () => {
       return;
     }
     
-    // Create a URL for the selected image
     const imageUrl = URL.createObjectURL(file);
     setSelectedImage(imageUrl);
     setError(null);
   };
-  
-  // Function to reset selected image
+
   const resetImage = () => {
     if (selectedImage) {
       URL.revokeObjectURL(selectedImage);
@@ -74,8 +69,7 @@ export const usePlantDiseaseDetection = () => {
     setPrediction(null);
     setError(null);
   };
-  
-  // Function to analyze the selected image
+
   const analyzeImage = async () => {
     if (!selectedImage) return;
     
@@ -88,14 +82,11 @@ export const usePlantDiseaseDetection = () => {
       return;
     }
     
-    // Convert data URL to File object
     try {
-      // Get the file from input element
       const response = await fetch(selectedImage);
       const blob = await response.blob();
       const file = new File([blob], "plant_image.jpg", { type: blob.type });
       
-      // Call the detect disease function
       await detectDisease(file);
     } catch (error) {
       console.error("Error preparing image for analysis:", error);
@@ -117,11 +108,10 @@ export const usePlantDiseaseDetection = () => {
       return;
     }
 
-    setLoading(true);
+    setIsLoading(true);
     setError(null);
 
     try {
-      // Use user's ID in the file path for secure, user-specific uploads
       const fileName = `${user.id}/${Date.now()}-${imageFile.name}`;
       
       const { data: uploadData, error: uploadError } = await supabase
@@ -160,7 +150,7 @@ export const usePlantDiseaseDetection = () => {
         variant: "destructive",
       });
     } finally {
-      setLoading(false);
+      setIsLoading(false);
     }
   };
 
