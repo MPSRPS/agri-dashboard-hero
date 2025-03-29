@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { toast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
@@ -108,27 +107,30 @@ export const usePlantDiseaseDetection = () => {
     }
   };
 
-  // Function to detect plant disease from image
   const detectDisease = async (imageFile: File): Promise<void> => {
-    setIsLoading(true);
+    if (!user) {
+      toast({
+        title: "Authentication Required",
+        description: "Please log in to upload images",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    setLoading(true);
     setError(null);
-    setResult(null);
 
     try {
-      // Create a unique file name for the image
-      const fileName = `${Date.now()}-${imageFile.name}`;
+      // Use user's ID in the file path for secure, user-specific uploads
+      const fileName = `${user.id}/${Date.now()}-${imageFile.name}`;
       
-      // Upload the image file to Supabase Storage
       const { data: uploadData, error: uploadError } = await supabase
         .storage
         .from('plant-disease-images')
         .upload(fileName, imageFile);
 
-      if (uploadError) {
-        throw new Error(`Error uploading image: ${uploadError.message}`);
-      }
+      if (uploadError) throw uploadError;
 
-      // Get the public URL for the uploaded image
       const { data: urlData } = await supabase
         .storage
         .from('plant-disease-images')
@@ -136,21 +138,17 @@ export const usePlantDiseaseDetection = () => {
 
       const imageUrl = urlData.publicUrl;
 
-      // Call the Edge Function for plant disease detection
       const { data, error: functionError } = await supabase
         .functions
         .invoke('analyze-plant-disease', {
           body: { 
             imageUrl,
-            userId: user?.id
+            userId: user.id
           },
         });
 
-      if (functionError) {
-        throw new Error(`Error analyzing image: ${functionError.message}`);
-      }
+      if (functionError) throw functionError;
 
-      // Set the result
       setResult(data);
       setPrediction(data);
     } catch (error) {
@@ -162,7 +160,7 @@ export const usePlantDiseaseDetection = () => {
         variant: "destructive",
       });
     } finally {
-      setIsLoading(false);
+      setLoading(false);
     }
   };
 
